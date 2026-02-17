@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Input, Select } from '../components/UI';
 import { LeaveType } from '../types';
 import { AlertCircle, Calendar as CalendarIcon } from 'lucide-react';
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/dist/style.css";
 
 interface AddLeaveProps {
   onSubmit: (data: any) => Promise<void>;
@@ -24,17 +26,29 @@ export const AddLeave: React.FC<AddLeaveProps> = ({ onSubmit, onCancel, balances
   const [duration, setDuration] = useState(0);
 
   useEffect(() => {
-    if (formData.startDate && formData.endDate) {
-      const start = new Date(formData.startDate);
-      const end = new Date(formData.endDate);
-      if (start <= end) {
-        const days = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        setDuration(days);
-      } else {
-        setDuration(0);
+  if (formData.startDate && formData.endDate) {
+    const start = new Date(formData.startDate);
+    const end = new Date(formData.endDate);
+
+    if (start <= end) {
+      let count = 0;
+      const current = new Date(start);
+
+      while (current <= end) {
+        const day = current.getDay(); // 0 = Sunday, 6 = Saturday
+        if (day !== 0 && day !== 6) {
+          count++;
+        }
+        current.setDate(current.getDate() + 1);
       }
+
+      setDuration(count);
+    } else {
+      setDuration(0);
     }
-  }, [formData.startDate, formData.endDate]);
+  }
+}, [formData.startDate, formData.endDate]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +69,41 @@ export const AddLeave: React.FC<AddLeaveProps> = ({ onSubmit, onCancel, balances
       setIsLoading(false);
     }
   };
+
+    const isWeekend = (date: Date) => {
+    const day = date.getDay();
+    return day === 0 || day === 6;
+  };
+
+  const selectedRange = {
+    from: formData.startDate ? new Date(formData.startDate) : undefined,
+    to: formData.endDate ? new Date(formData.endDate) : undefined,
+  };
+
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleRangeSelect = (range: any) => {
+    if (!range) {
+      setFormData(prev => ({
+        ...prev,
+        startDate: "",
+        endDate: ""
+      }));
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      startDate: range.from ? formatDate(range.from) : "",
+      endDate: range.to ? formatDate(range.to) : ""
+    }));
+  };
+
 
   const remaining = balances ? balances[formData.type] : 0;
   const isOverLimit = duration > remaining;
@@ -94,7 +143,7 @@ export const AddLeave: React.FC<AddLeaveProps> = ({ onSubmit, onCancel, balances
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">From</label>
               <div className="relative">
@@ -118,6 +167,36 @@ export const AddLeave: React.FC<AddLeaveProps> = ({ onSubmit, onCancel, balances
                   onChange={e => setFormData({...formData, endDate: e.target.value})}
                 />
               </div>
+            </div>
+          </div> */}
+
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">
+              Select Leave Dates
+            </label>
+
+            <div className="rounded-xl border border-slate-200 p-3 bg-white">
+              <DayPicker
+                mode="range"
+                selected={
+                  formData.startDate || formData.endDate
+                    ? selectedRange
+                    : undefined
+                }
+                onSelect={handleRangeSelect}
+                disabled={[isWeekend]}
+                modifiers={{ weekend: isWeekend }}
+                modifiersClassNames={{
+                  weekend: "weekend-day",
+                }}
+                modifiersStyles={{
+                  weekend: {
+                    backgroundColor: "#f1f5f9",
+                    color: "#cbd5e1",
+                    pointerEvents: "none"
+                  }
+                }}
+              />
             </div>
           </div>
 
