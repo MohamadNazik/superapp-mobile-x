@@ -4,7 +4,7 @@ import { LeaveType } from "../types";
 import { AlertCircle, Calendar as CalendarIcon } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
-import { useLeaves } from "../hooks/useLeaves";
+import { formatDuration } from "../utils/formatters";
 
 interface AddLeaveProps {
   onSubmit: (data: any) => Promise<void>;
@@ -30,6 +30,14 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
   });
 
   const [duration, setDuration] = useState(0);
+  const [leaveMode, setLeaveMode] = useState<"single" | "multiple">("multiple");
+  const [isHalfDay, setIsHalfDay] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(
+    formData.startDate ? new Date(formData.startDate) : new Date(),
+  );
+  const [halfDayPeriod, setHalfDayPeriod] = useState<"morning" | "evening">(
+    "morning",
+  );
 
   const formatDate = (date: Date) => {
     const year = date.getFullYear();
@@ -39,31 +47,34 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
   };
 
   useEffect(() => {
+    if (formData.startDate) {
+      setCalendarMonth(new Date(formData.startDate));
+    }
+  }, [formData.startDate]);
+
+  useEffect(() => {
+    if (!formData.startDate) {
+      setDuration(0);
+      return;
+    }
+
+    if (leaveMode === "single") {
+      setDuration(isHalfDay ? 0.5 : 1);
+      return;
+    }
+
     if (formData.startDate && formData.endDate) {
       const start = new Date(formData.startDate);
       const end = new Date(formData.endDate);
-
       if (start <= end) {
-        let count = 0;
-        const current = new Date(start);
-
-        while (current <= end) {
-          const day = current.getDay();
-          const formatted = formatDate(current);
-
-          if (day !== 0 && day !== 6 && !holidays.includes(formatted)) {
-            count++;
-          }
-
-          current.setDate(current.getDate() + 1);
-        }
-
-        setDuration(count);
+        setDuration(
+          formatDuration(formData.startDate, formData.endDate, holidays),
+        );
       } else {
         setDuration(0);
       }
     }
-  }, [formData.startDate, formData.endDate, holidays]);
+  }, [formData.startDate, formData.endDate, holidays, leaveMode, isHalfDay]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +87,18 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
 
     setIsLoading(true);
     try {
-      await onSubmit(formData);
+      const payload =
+        leaveMode === "single"
+          ? {
+              ...formData,
+              isHalfDay,
+              halfDayPeriod: isHalfDay ? halfDayPeriod : undefined,
+            }
+          : {
+              ...formData,
+            };
+
+      await onSubmit(payload);
       onCancel();
     } catch (e: any) {
       setError(e.message || "Failed to submit request");
@@ -166,12 +188,105 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">
-                From
-              </label>
-              <div className="relative">
+          <div className="flex gap-6">
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input
+                type="radio"
+                checked={leaveMode === "single"}
+                onChange={() => {
+                  setLeaveMode("single");
+                  setFormData((prev) => ({
+                    ...prev,
+                    endDate: prev.startDate,
+                  }));
+                }}
+              />
+              One Day
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input
+                type="radio"
+                checked={leaveMode === "multiple"}
+                onChange={() => {
+                  setLeaveMode("multiple");
+                  setIsHalfDay(false);
+                }}
+              />
+              Sequence Days
+            </label>
+          </div>
+
+          {leaveMode === "single" ? (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">
+                  Date
+                </label>
+                <Input
+                  type="date"
+                  required
+                  value={formData.startDate}
+                  min={new Date().toISOString().split("T")[0]}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      startDate: e.target.value,
+                      endDate: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="flex gap-6">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    checked={!isHalfDay}
+                    onChange={() => setIsHalfDay(false)}
+                  />
+                  Full Day
+                </label>
+
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    checked={isHalfDay}
+                    onChange={() => setIsHalfDay(true)}
+                  />
+                  Half Day
+                </label>
+              </div>
+
+              {/* Add this below */}
+              {isHalfDay && (
+                <div className="flex gap-6 pl-1">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={halfDayPeriod === "morning"}
+                      onChange={() => setHalfDayPeriod("morning")}
+                    />
+                    Morning
+                  </label>
+
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={halfDayPeriod === "evening"}
+                      onChange={() => setHalfDayPeriod("evening")}
+                    />
+                    Evening
+                  </label>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">
+                  From
+                </label>
                 <Input
                   type="date"
                   required
@@ -182,12 +297,11 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
                   }
                 />
               </div>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">
-                To
-              </label>
-              <div className="relative">
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">
+                  To
+                </label>
                 <Input
                   type="date"
                   required
@@ -199,12 +313,11 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
                 />
               </div>
             </div>
-          </div>
+          )}
 
           <DayPicker
-            defaultMonth={
-              formData.startDate ? new Date(formData.startDate) : new Date()
-            }
+            month={calendarMonth}
+            onMonthChange={setCalendarMonth}
             showOutsideDays
             disabled={[{ before: new Date() }, isWeekend, isHoliday]}
             modifiers={{

@@ -105,6 +105,7 @@ function App() {
           <MyLeaves
             leaves={leaves.filter((l) => l.userId === user.id)}
             balances={balances}
+            holidays={holidays}
             onDelete={actions.deleteLeave}
             onRequestNew={() => setIsAdding(true)}
             filters={filters}

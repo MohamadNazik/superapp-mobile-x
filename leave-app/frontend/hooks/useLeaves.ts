@@ -66,7 +66,9 @@ export const useLeaves = ({ token, isAdmin, user }: UseLeavesProps) => {
     const used = { sick: 0, annual: 0, casual: 0 };
 
     myActiveLeaves.forEach((l) => {
-      const days = formatDuration(l.startDate, l.endDate);
+      const days = l.isHalfDay
+        ? 0.5
+        : formatDuration(l.startDate, l.endDate, holidays);
       if (used[l.type] !== undefined) {
         used[l.type] += days;
       }
@@ -77,9 +79,9 @@ export const useLeaves = ({ token, isAdmin, user }: UseLeavesProps) => {
       annual: Math.max(0, user.allowances.annual - used.annual),
       casual: Math.max(0, user.allowances.casual - used.casual),
       total: user.allowances,
-      used: used,
+      used,
     };
-  }, [rawLeaves, user]);
+  }, [rawLeaves, user, holidays]);
 
   const leaves = useMemo(() => {
     let data = rawLeaves;
@@ -147,6 +149,8 @@ export const useLeaves = ({ token, isAdmin, user }: UseLeavesProps) => {
     startDate: string;
     endDate: string;
     reason: string;
+    isHalfDay?: boolean;
+    halfDayPeriod?: "morning" | "evening";
   }) => {
     if (!token) return;
 
@@ -157,10 +161,9 @@ export const useLeaves = ({ token, isAdmin, user }: UseLeavesProps) => {
       throw new Error("Start date cannot be after end date");
     }
 
-    const days =
-      Math.ceil(
-        Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-      ) + 1;
+    const days = data.isHalfDay
+      ? 0.5
+      : formatDuration(data.startDate, data.endDate, holidays);
 
     const remaining = balances[data.type];
 
