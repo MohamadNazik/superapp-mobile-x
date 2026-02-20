@@ -192,33 +192,39 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
             </div>
           </div>
 
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 cursor-pointer text-sm">
-              <input
-                type="radio"
-                checked={leaveMode === "single"}
-                onChange={() => {
-                  setLeaveMode("single");
-                  setFormData((prev) => ({
-                    ...prev,
-                    endDate: prev.startDate,
-                  }));
-                }}
-              />
-              One Day
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">
+              Leave Mode
             </label>
 
-            <label className="flex items-center gap-2 cursor-pointer text-sm">
-              <input
-                type="radio"
-                checked={leaveMode === "multiple"}
-                onChange={() => {
-                  setLeaveMode("multiple");
-                  setIsHalfDay(false);
-                }}
-              />
-              Sequence Days
-            </label>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <input
+                  type="radio"
+                  checked={leaveMode === "single"}
+                  onChange={() => {
+                    setLeaveMode("single");
+                    setFormData((prev) => ({
+                      ...prev,
+                      endDate: prev.startDate,
+                    }));
+                  }}
+                />
+                One Day
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <input
+                  type="radio"
+                  checked={leaveMode === "multiple"}
+                  onChange={() => {
+                    setLeaveMode("multiple");
+                    setIsHalfDay(false);
+                  }}
+                />
+                Sequence Days
+              </label>
+            </div>
           </div>
 
           {leaveMode === "single" ? (
@@ -242,49 +248,60 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
                 />
               </div>
 
-              <div className="flex gap-6">
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={!isHalfDay}
-                    onChange={() => {
-                      setIsHalfDay(false);
-                      setHalfDayPeriod(null);
-                    }}
-                  />
-                  Full Day
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">
+                  Duration
                 </label>
 
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={isHalfDay}
-                    onChange={() => setIsHalfDay(true)}
-                  />
-                  Half Day
-                </label>
+                <div className="flex gap-6">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={!isHalfDay}
+                      onChange={() => {
+                        setIsHalfDay(false);
+                        setHalfDayPeriod(null);
+                      }}
+                    />
+                    Full Day
+                  </label>
+
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={isHalfDay}
+                      onChange={() => setIsHalfDay(true)}
+                    />
+                    Half Day
+                  </label>
+                </div>
               </div>
 
               {/* Add this below */}
               {isHalfDay && (
-                <div className="flex gap-6 pl-1">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={halfDayPeriod === "morning"}
-                      onChange={() => setHalfDayPeriod("morning")}
-                    />
-                    Morning
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">
+                    Period
                   </label>
+                  <div className="flex gap-6">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={halfDayPeriod === "morning"}
+                        onChange={() => setHalfDayPeriod("morning")}
+                      />
+                      Morning
+                    </label>
 
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={halfDayPeriod === "evening"}
-                      onChange={() => setHalfDayPeriod("evening")}
-                    />
-                    Evening
-                  </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={halfDayPeriod === "evening"}
+                        onChange={() => setHalfDayPeriod("evening")}
+                      />
+                      Evening
+                    </label>
+                  </div>
                 </div>
               )}
             </div>
