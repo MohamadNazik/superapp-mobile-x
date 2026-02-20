@@ -35,9 +35,9 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
   const [calendarMonth, setCalendarMonth] = useState<Date>(
     formData.startDate ? new Date(formData.startDate) : new Date(),
   );
-  const [halfDayPeriod, setHalfDayPeriod] = useState<"morning" | "evening">(
-    "morning",
-  );
+  const [halfDayPeriod, setHalfDayPeriod] = useState<
+    "morning" | "evening" | null
+  >(null);
 
   const formatDate = (date: Date) => {
     const year = date.getFullYear();
@@ -82,6 +82,10 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
 
     if (!formData.startDate || !formData.endDate || !formData.reason) {
       setError("Please fill in all fields");
+      return;
+    }
+    if (leaveMode === "single" && isHalfDay && !halfDayPeriod) {
+      setError("Please select morning or evening for half day");
       return;
     }
 
@@ -243,7 +247,10 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
                   <input
                     type="radio"
                     checked={!isHalfDay}
-                    onChange={() => setIsHalfDay(false)}
+                    onChange={() => {
+                      setIsHalfDay(false);
+                      setHalfDayPeriod(null);
+                    }}
                   />
                   Full Day
                 </label>

@@ -4,8 +4,6 @@ export type LeaveType = "sick" | "annual" | "casual";
 
 export type LeaveStatus = "pending" | "approved" | "rejected";
 
-export type HalfDayPeriod = "morning" | "evening";
-
 export interface Allowances {
   sick: number;
   annual: number;
@@ -32,7 +30,7 @@ export interface Leave {
   createdAt: string;
   approverComment?: string;
   isHalfDay?: boolean;
-  halfDayPeriod?: HalfDayPeriod;
+  halfDayPeriod?: "morning" | "evening" | null;
 }
 
 export interface DateRange {

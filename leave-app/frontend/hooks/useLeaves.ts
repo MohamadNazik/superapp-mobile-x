@@ -150,7 +150,7 @@ export const useLeaves = ({ token, isAdmin, user }: UseLeavesProps) => {
     endDate: string;
     reason: string;
     isHalfDay?: boolean;
-    halfDayPeriod?: "morning" | "evening";
+    halfDayPeriod?: "morning" | "evening" | null;
   }) => {
     if (!token) return;
 
