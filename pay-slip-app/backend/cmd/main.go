@@ -9,7 +9,9 @@ import (
 	"os"
 	"pay-slip-app/internal/db"
 	"pay-slip-app/internal/handlers"
+	"pay-slip-app/internal/services"
 	"pay-slip-app/internal/storage"
+
 	"pay-slip-app/pkg/auth"
 
 	gcs "cloud.google.com/go/storage"
@@ -47,6 +49,8 @@ func main() {
 	}
 
 	// MySQL (users and pay slip metadata) ─────────────────────────────────────
+	userService := services.NewUserService(database)
+	paySlipService := services.NewPaySlipService(database)
 
 	// ── Firebase Storage (GCS) ───────────────────────────────────────────────
 	gcsClient, err := gcs.NewClient(ctx, opts...)
@@ -57,7 +61,7 @@ func main() {
 	paySlipStorage := storage.New(gcsClient, storageBucket)
 
 	// ── Auth ─────────────────────────────────────────────────────────────────
-	authenticator, err := auth.New(database)
+	authenticator, err := auth.New(userService)
 	if err != nil {
 		log.Fatalf("Failed to initialize authenticator: %v", err)
 	}
@@ -66,7 +70,7 @@ func main() {
 	// ── HTTP server ───────────────────────────────────────────────────────────
 	mux := http.NewServeMux()
 
-	h := handlers.New(database, paySlipStorage)
+	h := handlers.New(userService, paySlipService, paySlipStorage)
 
 	// Auth middleware wrapper
 	auth := authenticator.AuthMiddleware

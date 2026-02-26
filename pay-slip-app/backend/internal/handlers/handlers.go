@@ -6,20 +6,26 @@ import (
 	"fmt"
 	"net/http"
 	"pay-slip-app/internal/constants"
-	"pay-slip-app/internal/db"
 	"pay-slip-app/internal/models"
+	"pay-slip-app/internal/services"
 	"pay-slip-app/internal/storage"
 	"time"
 )
 
 type Handler struct {
-	DB      *db.Database
-	Storage *storage.FirebaseStorage
+	UserService    *services.UserService
+	PaySlipService *services.PaySlipService
+	Storage        *storage.FirebaseStorage
 }
 
-func New(database *db.Database, storage *storage.FirebaseStorage) *Handler {
-	return &Handler{DB: database, Storage: storage}
+func New(userService *services.UserService, paySlipService *services.PaySlipService, storage *storage.FirebaseStorage) *Handler {
+	return &Handler{
+		UserService:    userService,
+		PaySlipService: paySlipService,
+		Storage:        storage,
+	}
 }
+
 
 // ── User handlers ─────────────────────────────────────────────────────────────
 
@@ -44,7 +50,7 @@ func (h *Handler) GetUsers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
-	users, err := h.DB.GetAllUsers()
+	users, err := h.UserService.GetAllUsers()
 	if err != nil {
 		http.Error(w, "Failed to get users", http.StatusInternalServerError)
 		return
@@ -69,7 +75,7 @@ func (h *Handler) UpdateUserRole(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := h.DB.UpdateUserRole(userID, req.Role); err != nil {
+	if err := h.UserService.UpdateUserRole(userID, req.Role); err != nil {
 		http.Error(w, "Failed to update user role", http.StatusInternalServerError)
 		return
 	}
@@ -129,7 +135,7 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Resolve the target user's email
-	allUsers, err := h.DB.GetAllUsers()
+	allUsers, err := h.UserService.GetAllUsers()
 	if err != nil {
 		http.Error(w, "Failed to look up users", http.StatusInternalServerError)
 		return
@@ -147,18 +153,18 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Upsert logic
-	existing, err := h.DB.GetPaySlipByUserMonthYear(req.UserID, req.Month, req.Year)
+	existing, err := h.PaySlipService.GetPaySlipByUserMonthYear(req.UserID, req.Month, req.Year)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 
 	if existing != nil {
-		if err := h.DB.UpdatePaySlipFile(existing.ID, req.FileURL, currentUser.ID); err != nil {
+		if err := h.PaySlipService.UpdatePaySlipFile(existing.ID, req.FileURL, currentUser.ID); err != nil {
 			http.Error(w, "Failed to update pay slip", http.StatusInternalServerError)
 			return
 		}
-		updated, _ := h.DB.GetPaySlipByID(existing.ID)
+		updated, _ := h.PaySlipService.GetPaySlipByID(existing.ID)
 		jsonResponse(w, http.StatusOK, updated)
 		return
 	}
@@ -172,7 +178,7 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 		UploadedBy: currentUser.ID,
 		CreatedAt:  time.Now(),
 	}
-	if err := h.DB.InsertPaySlip(ps); err != nil {
+	if err := h.PaySlipService.InsertPaySlip(ps); err != nil {
 		http.Error(w, "Failed to save pay slip", http.StatusInternalServerError)
 		return
 	}
@@ -189,7 +195,7 @@ func (h *Handler) GetPaySlips(w http.ResponseWriter, r *http.Request) {
 
 	isAdmin := currentUser.Role == string(constants.RoleAdmin)
 
-	slips, total, err := h.DB.GetPaySlips(currentUser.ID, isAdmin)
+	slips, total, err := h.PaySlipService.GetPaySlips(currentUser.ID, isAdmin)
 	if err != nil {
 		http.Error(w, "Failed to get pay slips", http.StatusInternalServerError)
 		return
@@ -209,7 +215,7 @@ func (h *Handler) GetPaySlipByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ps, err := h.DB.GetPaySlipByID(r.PathValue("id"))
+	ps, err := h.PaySlipService.GetPaySlipByID(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, "Pay slip not found", http.StatusNotFound)
 		return
@@ -236,12 +242,12 @@ func (h *Handler) DeletePaySlip(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := r.PathValue("id")
-	if _, err := h.DB.GetPaySlipByID(id); err != nil {
+	if _, err := h.PaySlipService.GetPaySlipByID(id); err != nil {
 		http.Error(w, "Pay slip not found", http.StatusNotFound)
 		return
 	}
 
-	if err := h.DB.DeletePaySlip(id); err != nil {
+	if err := h.PaySlipService.DeletePaySlip(id); err != nil {
 		http.Error(w, "Failed to delete pay slip", http.StatusInternalServerError)
 		return
 	}

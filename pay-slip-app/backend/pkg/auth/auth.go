@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 	"pay-slip-app/internal/constants"
-	"pay-slip-app/internal/db"
+	"pay-slip-app/internal/services"
 	"strings"
 	"time"
 
@@ -16,19 +16,20 @@ import (
 )
 
 type Authenticator struct {
-	DB     *db.Database
-	jwks   jwk.Set
-	cancel context.CancelFunc
+	UserService *services.UserService
+	jwks        jwk.Set
+	cancel      context.CancelFunc
 }
 
-func New(database *db.Database) (*Authenticator, error) {
+func New(userService *services.UserService) (*Authenticator, error) {
 	env := os.Getenv("ENVIRONMENT")
 	if env != "production" {
 		// In development/test mode, we don't need JWKS as we use a mock user.
 		return &Authenticator{
-			DB: database,
+			UserService: userService,
 		}, nil
 	}
+
 
 	jwksURL := os.Getenv("JWKS_URL")
 	if jwksURL == "" {
@@ -44,9 +45,9 @@ func New(database *db.Database) (*Authenticator, error) {
 	}
 
 	a := &Authenticator{
-		DB:     database,
-		jwks:   set,
-		cancel: cancel,
+		UserService: userService,
+		jwks:        set,
+		cancel:      cancel,
 	}
 
 	// Refresh JWKS in the background every hour.
@@ -123,11 +124,11 @@ func (a *Authenticator) AuthMiddleware(next http.Handler) http.Handler {
 			emailStr = "admin@example.com"
 		}
 
-		user, err := a.DB.GetUserByEmail(emailStr)
+		user, err := a.UserService.GetUserByEmail(emailStr)
 		if err != nil {
 			// Auto-create user on first login.
 			if err.Error() == "sql: no rows in result set" {
-				user, err = a.DB.CreateUser(emailStr)
+				user, err = a.UserService.CreateUser(emailStr)
 				if err != nil {
 					http.Error(w, "Failed to create user", http.StatusInternalServerError)
 					return

@@ -8,12 +8,10 @@ import (
 	"log"
 	"os"
 	"pay-slip-app/internal/constants"
-	"pay-slip-app/internal/models"
 	"sync"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/google/uuid"
 )
 
 type Database struct {
@@ -107,130 +105,6 @@ func (db *Database) Migrate() error {
 	return nil
 }
 
-// ── User methods (pay slips are in Firestore — see internal/store) ────────────
+// ── Database Methods ───────────────────────────────────────────────────────
+// (Database methods have been moved to internal/services)
 
-func (db *Database) GetUserByEmail(email string) (*models.User, error) {
-	user := &models.User{}
-	query := "SELECT id, email, role, created_at FROM users WHERE email = ?"
-	err := db.Conn.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Role, &user.CreatedAt)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-func (db *Database) CreateUser(email string) (*models.User, error) {
-	user := &models.User{
-		ID:    uuid.New().String(),
-		Email: email,
-		Role:  "user",
-	}
-	query := "INSERT INTO users (id, email, role) VALUES (?, ?, ?)"
-	if _, err := db.Conn.Exec(query, user.ID, user.Email, user.Role); err != nil {
-		return nil, err
-	}
-	return db.GetUserByEmail(email)
-}
-
-func (db *Database) GetAllUsers() ([]models.User, error) {
-	rows, err := db.Conn.Query("SELECT id, email, role, created_at FROM users")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	users := make([]models.User, 0)
-	for rows.Next() {
-		var u models.User
-		if err := rows.Scan(&u.ID, &u.Email, &u.Role, &u.CreatedAt); err != nil {
-			return nil, err
-		}
-		users = append(users, u)
-	}
-	return users, nil
-}
-
-func (db *Database) UpdateUserRole(userID string, role string) error {
-	_, err := db.Conn.Exec("UPDATE users SET role = ? WHERE id = ?", role, userID)
-	return err
-}
-
-// ── Pay Slip methods ─────────────────────────────────────────────────────────
-
-func (db *Database) InsertPaySlip(ps *models.PaySlip) error {
-	if ps.ID == "" {
-		ps.ID = uuid.New().String()
-	}
-	if ps.CreatedAt.IsZero() {
-		ps.CreatedAt = time.Now()
-	}
-	query := `INSERT INTO pay_slips (id, user_id, user_email, month, year, file_url, uploaded_by, created_at) 
-	          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err := db.Conn.Exec(query, ps.ID, ps.UserID, ps.UserEmail, ps.Month, ps.Year, ps.FileURL, ps.UploadedBy, ps.CreatedAt)
-	return err
-}
-
-func (db *Database) UpdatePaySlipFile(id, fileURL, uploadedBy string) error {
-	query := "UPDATE pay_slips SET file_url = ?, uploaded_by = ?, created_at = ? WHERE id = ?"
-	_, err := db.Conn.Exec(query, fileURL, uploadedBy, time.Now(), id)
-	return err
-}
-
-func (db *Database) DeletePaySlip(id string) error {
-	_, err := db.Conn.Exec("DELETE FROM pay_slips WHERE id = ?", id)
-	return err
-}
-
-func (db *Database) GetPaySlipByID(id string) (*models.PaySlip, error) {
-	ps := &models.PaySlip{}
-	query := "SELECT id, user_id, user_email, month, year, file_url, uploaded_by, created_at FROM pay_slips WHERE id = ?"
-	err := db.Conn.QueryRow(query, id).Scan(&ps.ID, &ps.UserID, &ps.UserEmail, &ps.Month, &ps.Year, &ps.FileURL, &ps.UploadedBy, &ps.CreatedAt)
-	if err != nil {
-		return nil, err
-	}
-	return ps, nil
-}
-
-func (db *Database) GetPaySlipByUserMonthYear(userID string, month, year int) (*models.PaySlip, error) {
-	ps := &models.PaySlip{}
-	query := "SELECT id, user_id, user_email, month, year, file_url, uploaded_by, created_at FROM pay_slips WHERE user_id = ? AND month = ? AND year = ?"
-	err := db.Conn.QueryRow(query, userID, month, year).Scan(&ps.ID, &ps.UserID, &ps.UserEmail, &ps.Month, &ps.Year, &ps.FileURL, &ps.UploadedBy, &ps.CreatedAt)
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return ps, nil
-}
-
-// GetPaySlips returns a list of pay slips and the total count.
-func (db *Database) GetPaySlips(userID string, isAdmin bool) ([]models.PaySlip, int, error) {
-	var query string
-	var args []interface{}
-
-	if isAdmin {
-		query = "SELECT id, user_id, user_email, month, year, file_url, uploaded_by, created_at FROM pay_slips ORDER BY created_at DESC"
-	} else {
-		query = "SELECT id, user_id, user_email, month, year, file_url, uploaded_by, created_at FROM pay_slips WHERE user_id = ? ORDER BY created_at DESC"
-		args = append(args, userID)
-	}
-
-	rows, err := db.Conn.Query(query, args...)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	slips := make([]models.PaySlip, 0)
-	for rows.Next() {
-		var ps models.PaySlip
-		if err := rows.Scan(&ps.ID, &ps.UserID, &ps.UserEmail, &ps.Month, &ps.Year, &ps.FileURL, &ps.UploadedBy, &ps.CreatedAt); err != nil {
-			return nil, 0, err
-		}
-		slips = append(slips, ps)
-	}
-
-	total := len(slips)
-	return slips, total, nil
-}
