@@ -67,22 +67,12 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Resolve the target user's email
-	allUsers, err := h.UserService.GetAllUsers()
+	targetUser, err := h.UserService.GetUserByID(req.UserID)
 	if err != nil {
-		http.Error(w, "Failed to look up users", http.StatusInternalServerError)
-		return
-	}
-	userEmail := ""
-	for _, u := range allUsers {
-		if u.ID == req.UserID {
-			userEmail = u.Email
-			break
-		}
-	}
-	if userEmail == "" {
 		http.Error(w, "userId not found", http.StatusBadRequest)
 		return
 	}
+	userEmail := targetUser.Email
 
 	// Upsert logic
 	existing, err := h.PaySlipService.GetPaySlipByUserMonthYear(req.UserID, req.Month, req.Year)

@@ -25,6 +25,16 @@ func (s *UserService) GetUserByEmail(email string) (*models.User, error) {
 	return user, nil
 }
 
+func (s *UserService) GetUserByID(id string) (*models.User, error) {
+	user := &models.User{}
+	query := "SELECT id, email, role, created_at FROM users WHERE id = ?"
+	err := s.db.Conn.QueryRow(query, id).Scan(&user.ID, &user.Email, &user.Role, &user.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 func (s *UserService) CreateUser(email string) (*models.User, error) {
 	user := &models.User{
 		ID:    uuid.New().String(),
