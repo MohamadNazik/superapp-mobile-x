@@ -1,0 +1,337 @@
+openapi: "3.0.3"
+
+info:
+  title: Pay-Slip-App API
+  description: |
+    Backend API for the `pay-slip-app` microapp.
+
+    **Auth**: Every `/api/*` route requires a valid JWT (`Bearer <token>`).
+    On first login the user is auto-created with the `user` role.
+
+    **Roles**
+    - `user` — can list/view own pay slips only
+    - `admin` — can upload files, create metadata records, and delete slips
+
+    **Two-Step Upload**:
+    1. Admin calls `POST /api/upload` with a file (`multipart/form-data`).
+    2. Backend uploads to Firebase Storage and returns `fileUrl`.
+    3. Admin calls `POST /api/pay-slips` with JSON metadata and the `fileUrl`.
+  version: "3.0.0"
+
+servers:
+  - url: http://localhost:8081
+    description: Local development
+
+tags:
+  - name: Health
+  - name: Users
+  - name: PaySlips
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        email:
+          type: string
+          format: email
+          example: "alice@example.com"
+        role:
+          type: string
+          enum: [user, admin]
+          example: "user"
+
+    PaySlip:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "d2f1a3b4-0000-1111-aaaa-bbbbccccdddd"
+        userId:
+          type: string
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        userEmail:
+          type: string
+          format: email
+          example: "alice@example.com"
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        year:
+          type: integer
+        fileUrl:
+          type: string
+          format: uri
+          description: Permanent Firebase Storage download URL
+        uploadedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    PaySlipsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaySlip"
+        total:
+          type: integer
+
+    CreatePaySlipRequest:
+      type: object
+      required: [userId, month, year, fileUrl]
+      properties:
+        userId:
+          type: string
+          description: Target employee's user ID
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        year:
+          type: integer
+        fileUrl:
+          type: string
+          format: uri
+          description: URL returned by /api/upload
+
+    UpdateUserRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [user, admin]
+
+    UploadResponse:
+      type: object
+      properties:
+        fileUrl:
+          type: string
+          format: uri
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing/invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Wrong role
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+paths:
+  /ping:
+    get:
+      tags: [Health]
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: OK
+
+  /api/me:
+    get:
+      tags: [Users]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/users:
+    get:
+      tags: [Users]
+      summary: List all users [admin only]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/users/{id}/role:
+    put:
+      tags: [Users]
+      summary: Update a user's role [admin only]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRoleRequest"
+      responses:
+        "200":
+          description: Role updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/upload:
+    post:
+      tags: [PaySlips]
+      summary: Upload a pay slip file [admin only]
+      description: |
+        Accepts a file and uploads it to Firebase Storage. Returns the URL to be used in `/api/pay-slips`.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PDF or Image (max 10MB)
+      responses:
+        "200":
+          description: Uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/pay-slips:
+    post:
+      tags: [PaySlips]
+      summary: Save pay slip metadata [admin only]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaySlipRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaySlip"
+        "200":
+          description: Updated (upsert)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaySlip"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+    get:
+      tags: [PaySlips]
+      summary: List pay slips
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaySlipsResponse"
+
+  /api/pay-slips/{id}:
+    get:
+      tags: [PaySlips]
+      summary: Get a single pay slip
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaySlip"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags: [PaySlips]
+      summary: Delete metadata [admin only]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
