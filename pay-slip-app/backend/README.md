@@ -47,6 +47,7 @@ pay-slip-app/backend/
    cp .env.example .env
    ```
 2. Fill in the required environment variables in `.env`:
+   - `PORT`: The port on which the server will listen (defaults to `8081`).
    - `DB_*`: Your MySQL connection details (Host, Port, User, Password, Name).
    - `JWKS_URL`: The JWKS endpoint for authentication (same as Superapp).
    - `FIREBASE_STORAGE_BUCKET`: Your Firebase storage bucket name (e.g., `your-project.appspot.com`).
@@ -66,10 +67,11 @@ If you are running locally or outside of GCP, you must provide a Service Account
    - Set `GOOGLE_APPLICATION_CREDENTIALS=service-account.json` in your `.env` file.
 
 ### Running Locally
-To start the server on port `8081`:
+To start the server:
 ```bash
 go run cmd/main.go
 ```
+The server will start on the port specified by the `PORT` environment variable (default: `8081`).
 
 ## API Documentation
 The API is documented using OpenAPI. You can find the specification in [api/openapi.yaml](./api/openapi.yaml).

@@ -96,8 +96,13 @@ func main() {
 	// CORS middleware.
 	handler := cors(mux)
 
-	log.Println("Server running on :8081")
-	if err := http.ListenAndServe(":8081", handler); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081"
+	}
+
+	log.Printf("Server running on :%s\n", port)
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
 }
