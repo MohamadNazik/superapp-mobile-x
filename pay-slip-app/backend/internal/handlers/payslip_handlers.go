@@ -61,6 +61,11 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := req.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	// Resolve the target user's email
 	allUsers, err := h.UserService.GetAllUsers()
 	if err != nil {

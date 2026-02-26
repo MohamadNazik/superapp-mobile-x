@@ -55,6 +55,11 @@ func (h *Handler) UpdateUserRole(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	if err := req.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	if err := h.UserService.UpdateUserRole(userID, req.Role); err != nil {
 		http.Error(w, "Failed to update user role", http.StatusInternalServerError)
 		return

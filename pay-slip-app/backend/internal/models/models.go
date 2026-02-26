@@ -1,9 +1,13 @@
 // internal/models/models.go
 package models
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 // User represents an authenticated employee in the system.
+// ... (User struct remains the same)
 type User struct {
 	ID        string    `json:"id"`
 	Email     string    `json:"email"`
@@ -11,37 +15,56 @@ type User struct {
 	CreatedAt time.Time `json:"-"`
 }
 
-// PaySlip represents a single pay slip record stored in Firestore.
-// FileURL is a Firebase Storage download URL uploaded directly by the frontend.
+// PaySlip represents a single pay slip record stored in MySQL.
 type PaySlip struct {
 	ID         string    `json:"id"`
 	UserID     string    `json:"userId"`
 	UserEmail  string    `json:"userEmail,omitempty"`
 	Month      int       `json:"month"`
 	Year       int       `json:"year"`
-	FileURL    string    `json:"fileUrl"`   // Firebase Storage download URL
+	FileURL    string    `json:"fileUrl"` // Firebase Storage download URL
 	UploadedBy string    `json:"uploadedBy"`
 	CreatedAt  time.Time `json:"createdAt"`
 }
 
 // PaySlipsResponse is the unified response for GET /api/pay-slips.
-// Admin receives all employees' slips; users receive only their own.
-// Both use the same wrapper shape.
 type PaySlipsResponse struct {
 	Data  []PaySlip `json:"data"`
 	Total int       `json:"total"`
 }
 
 // CreatePaySlipRequest is the JSON body for POST /api/pay-slips.
-// The frontend uploads the file directly to Firebase Storage and sends back the download URL.
 type CreatePaySlipRequest struct {
-	UserID  string `json:"userId"  binding:"required"`
-	Month   int    `json:"month"   binding:"required,min=1,max=12"`
-	Year    int    `json:"year"    binding:"required"`
-	FileURL string `json:"fileUrl" binding:"required"`
+	UserID  string `json:"userId"`
+	Month   int    `json:"month"`
+	Year    int    `json:"year"`
+	FileURL string `json:"fileUrl"`
+}
+
+func (r *CreatePaySlipRequest) Validate() error {
+	if r.UserID == "" {
+		return errors.New("userId is required")
+	}
+	if r.Month < 1 || r.Month > 12 {
+		return errors.New("month must be between 1 and 12")
+	}
+	if r.Year < 2000 {
+		return errors.New("year must be 2000 or later")
+	}
+	if r.FileURL == "" {
+		return errors.New("fileUrl is required")
+	}
+	return nil
 }
 
 // UpdateUserRoleRequest is used by PUT /api/users/:id/role.
 type UpdateUserRoleRequest struct {
-	Role string `json:"role" binding:"required"`
+	Role string `json:"role"`
+}
+
+func (r *UpdateUserRoleRequest) Validate() error {
+	if r.Role != "admin" && r.Role != "user" {
+		return errors.New("role must be either 'admin' or 'user'")
+	}
+	return nil
 }
