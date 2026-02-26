@@ -86,7 +86,11 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to update pay slip", http.StatusInternalServerError)
 			return
 		}
-		updated, _ := h.PaySlipService.GetPaySlipByID(existing.ID)
+		updated, err := h.PaySlipService.GetPaySlipByID(existing.ID)
+		if err != nil {
+			http.Error(w, "Failed to retrieve updated pay slip", http.StatusInternalServerError)
+			return
+		}
 		jsonResponse(w, http.StatusOK, updated)
 		return
 	}
