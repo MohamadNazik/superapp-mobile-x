@@ -1,17 +1,17 @@
 package services
 
 import (
-	"pay-slip-app/internal/db"
+	"pay-slip-app/internal/database"
 	"pay-slip-app/internal/models"
 
 	"github.com/google/uuid"
 )
 
 type UserService struct {
-	db *db.Database
+	db *database.Database
 }
 
-func NewUserService(database *db.Database) *UserService {
+func NewUserService(database *database.Database) *UserService {
 	return &UserService{db: database}
 }
 

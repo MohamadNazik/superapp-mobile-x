@@ -2,7 +2,7 @@ package services
 
 import (
 	"database/sql"
-	"pay-slip-app/internal/db"
+	"pay-slip-app/internal/database"
 	"pay-slip-app/internal/models"
 	"time"
 
@@ -10,11 +10,11 @@ import (
 )
 
 type PaySlipService struct {
-	db *db.Database
+	db *database.Database
 }
 
-func NewPaySlipService(database *db.Database) *PaySlipService {
-	return &PaySlipService{db: database}
+func NewPaySlipService(db *database.Database) *PaySlipService {
+	return &PaySlipService{db: db}
 }
 
 func (s *PaySlipService) InsertPaySlip(ps *models.PaySlip) error {

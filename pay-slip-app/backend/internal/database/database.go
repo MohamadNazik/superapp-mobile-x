@@ -1,5 +1,5 @@
-// internal/db/db.go
-package db
+// internal/database/database.go
+package database
 
 import (
 	"database/sql"
@@ -94,7 +94,7 @@ func NewDatabase() (*Database, error) {
 
 // Migrate runs the SQL migration file.
 func (db *Database) Migrate() error {
-	query, err := ioutil.ReadFile("migrations/001_initial.sql")
+	query, err := ioutil.ReadFile("internal/database/migrations/001_initial.sql")
 	if err != nil {
 		return fmt.Errorf("could not read migration file: %w", err)
 	}

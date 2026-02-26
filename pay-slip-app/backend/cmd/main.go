@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"pay-slip-app/internal/db"
+	"pay-slip-app/internal/database"
 	"pay-slip-app/internal/handlers"
 	"pay-slip-app/internal/services"
 	"pay-slip-app/internal/storage"
@@ -40,17 +40,17 @@ func main() {
 	}
 
 	// ── MySQL (users) ────────────────────────────────────────────────────────
-	database, err := db.NewDatabase()
+	db, err := database.NewDatabase()
 	if err != nil {
 		log.Fatalf("Could not connect to the database: %v", err)
 	}
-	if err := database.Migrate(); err != nil {
+	if err := db.Migrate(); err != nil {
 		log.Fatalf("Could not run database migrations: %v", err)
 	}
 
 	// MySQL (users and pay slip metadata) ─────────────────────────────────────
-	userService := services.NewUserService(database)
-	paySlipService := services.NewPaySlipService(database)
+	userService := services.NewUserService(db)
+	paySlipService := services.NewPaySlipService(db)
 
 	// ── Firebase Storage (GCS) ───────────────────────────────────────────────
 	gcsClient, err := gcs.NewClient(ctx, opts...)
