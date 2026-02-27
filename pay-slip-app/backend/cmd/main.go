@@ -11,6 +11,7 @@ import (
 	"pay-slip-app/internal/handlers"
 	"pay-slip-app/internal/services"
 	"pay-slip-app/internal/storage"
+	"strings"
 	"time"
 
 	"pay-slip-app/pkg/auth"
@@ -30,19 +31,34 @@ func main() {
 
 
 	// 1. GCS Storage Client (Firebase) ──────────────────────────────────────────
+	log.Println("Initialization stage: GCS Storage")
 	storageBucket := os.Getenv("FIREBASE_STORAGE_BUCKET")
 	if storageBucket == "" {
 		log.Fatal("FIREBASE_STORAGE_BUCKET environment variable not set")
 	}
 
 	var opts []option.ClientOption
-	// Try JSON string first (preferred for Choreo/Cloud), then file path.
-	if jsonCreds := os.Getenv("GCP_SERVICE_ACCOUNT_JSON"); jsonCreds != "" {
-		opts = append(opts, option.WithCredentialsJSON([]byte(jsonCreds)))
-	} else if credFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); credFile != "" {
-		opts = append(opts, option.WithCredentialsFile(credFile))
-	} else {
-		log.Println("WARNING: Neither GCP_SERVICE_ACCOUNT_JSON nor GOOGLE_APPLICATION_CREDENTIALS set. Using Application Default Credentials (ADC).")
+	// Helper to load credentials from either a JSON string or a file path.
+	loadCreds := func(name, val string) bool {
+		if val == "" {
+			return false
+		}
+		// If it looks like JSON, treat it as JSON.
+		if strings.HasPrefix(strings.TrimSpace(val), "{") {
+			log.Printf("GCS: Detected JSON credentials in %s\n", name)
+			opts = append(opts, option.WithCredentialsJSON([]byte(val)))
+			return true
+		}
+		// Otherwise, treat it as a file path.
+		log.Printf("GCS: Using credentials file from %s: %s\n", name, val)
+		opts = append(opts, option.WithCredentialsFile(val))
+		return true
+	}
+
+	if !loadCreds("GCP_SERVICE_ACCOUNT_JSON", os.Getenv("GCP_SERVICE_ACCOUNT_JSON")) {
+		if !loadCreds("GOOGLE_APPLICATION_CREDENTIALS", os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")) {
+			log.Println("WARNING: Neither GCP_SERVICE_ACCOUNT_JSON nor GOOGLE_APPLICATION_CREDENTIALS set. Using ADC.")
+		}
 	}
 
 	gcsClient, err := gcs.NewClient(ctx, opts...)
@@ -53,9 +69,9 @@ func main() {
 	paySlipStorage := storage.New(gcsClient, storageBucket)
 
 	// 2. MySQL (users and pay slip metadata) ─────────────────────────────────────
+	log.Println("Initialization stage: Database")
 	db, err := database.NewDatabase()
 	if err != nil {
-		// If DB fails, we haven't leaked connections because we just started.
 		log.Fatalf("Could not connect to the database: %v", err)
 	}
 	if err := db.Migrate(); err != nil {
@@ -66,6 +82,7 @@ func main() {
 	paySlipService := services.NewPaySlipService(db)
 
 	// 3. Auth ─────────────────────────────────────────────────────────────────
+	log.Println("Initialization stage: Auth")
 	authenticator, err := auth.New(userService)
 	if err != nil {
 		log.Fatalf("Failed to initialize authenticator: %v", err)
