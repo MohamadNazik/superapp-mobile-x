@@ -3,6 +3,8 @@ package auth
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -127,7 +129,7 @@ func (a *Authenticator) AuthMiddleware(next http.Handler) http.Handler {
 		user, err := a.UserService.GetUserByEmail(emailStr)
 		if err != nil {
 			// Auto-create user on first login.
-			if err.Error() == "sql: no rows in result set" {
+			if errors.Is(err, sql.ErrNoRows) {
 				user, err = a.UserService.CreateUser(emailStr)
 				if err != nil {
 					http.Error(w, "Failed to create user", http.StatusInternalServerError)
