@@ -22,6 +22,5 @@ CREATE TABLE IF NOT EXISTS pay_slips (
     uploaded_by VARCHAR(255) NOT NULL,
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_payslips_user_date (user_id, year DESC, month DESC),
-    INDEX idx_payslips_email_date (user_email, year DESC, month DESC)
+    INDEX idx_payslips_user_date (user_id, year DESC, month DESC)
 );
