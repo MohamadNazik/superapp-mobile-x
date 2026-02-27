@@ -25,6 +25,7 @@ type PaySlip struct {
 	FileURL    string    `json:"fileUrl"` // Firebase Storage download URL
 	UploadedBy string    `json:"uploadedBy"`
 	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
 // PaySlipsResponse is the unified response for GET /api/pay-slips.
