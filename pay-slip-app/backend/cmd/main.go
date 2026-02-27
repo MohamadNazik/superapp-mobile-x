@@ -29,31 +29,22 @@ func main() {
 	ctx := context.Background()
 
 
+	// 1. GCS Storage Client (Firebase) ──────────────────────────────────────────
 	storageBucket := os.Getenv("FIREBASE_STORAGE_BUCKET")
 	if storageBucket == "" {
 		log.Fatal("FIREBASE_STORAGE_BUCKET environment variable not set")
 	}
 
-	// Build option slice — use service-account JSON if provided, otherwise ADC.
 	var opts []option.ClientOption
-	if credFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); credFile != "" {
+	// Try JSON string first (preferred for Choreo/Cloud), then file path.
+	if jsonCreds := os.Getenv("GCP_SERVICE_ACCOUNT_JSON"); jsonCreds != "" {
+		opts = append(opts, option.WithCredentialsJSON([]byte(jsonCreds)))
+	} else if credFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); credFile != "" {
 		opts = append(opts, option.WithCredentialsFile(credFile))
+	} else {
+		log.Println("WARNING: Neither GCP_SERVICE_ACCOUNT_JSON nor GOOGLE_APPLICATION_CREDENTIALS set. Using Application Default Credentials (ADC).")
 	}
 
-	// ── MySQL (users) ────────────────────────────────────────────────────────
-	db, err := database.NewDatabase()
-	if err != nil {
-		log.Fatalf("Could not connect to the database: %v", err)
-	}
-	if err := db.Migrate(); err != nil {
-		log.Fatalf("Could not run database migrations: %v", err)
-	}
-
-	// MySQL (users and pay slip metadata) ─────────────────────────────────────
-	userService := services.NewUserService(db)
-	paySlipService := services.NewPaySlipService(db)
-
-	// ── Firebase Storage (GCS) ───────────────────────────────────────────────
 	gcsClient, err := gcs.NewClient(ctx, opts...)
 	if err != nil {
 		log.Fatalf("Failed to create GCS client: %v", err)
@@ -61,7 +52,20 @@ func main() {
 	defer gcsClient.Close()
 	paySlipStorage := storage.New(gcsClient, storageBucket)
 
-	// ── Auth ─────────────────────────────────────────────────────────────────
+	// 2. MySQL (users and pay slip metadata) ─────────────────────────────────────
+	db, err := database.NewDatabase()
+	if err != nil {
+		// If DB fails, we haven't leaked connections because we just started.
+		log.Fatalf("Could not connect to the database: %v", err)
+	}
+	if err := db.Migrate(); err != nil {
+		log.Fatalf("Could not run database migrations: %v", err)
+	}
+
+	userService := services.NewUserService(db)
+	paySlipService := services.NewPaySlipService(db)
+
+	// 3. Auth ─────────────────────────────────────────────────────────────────
 	authenticator, err := auth.New(userService)
 	if err != nil {
 		log.Fatalf("Failed to initialize authenticator: %v", err)
