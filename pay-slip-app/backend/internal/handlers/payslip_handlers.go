@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"pay-slip-app/internal/constants"
 	"pay-slip-app/internal/models"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -121,15 +124,51 @@ func (h *Handler) GetPaySlips(w http.ResponseWriter, r *http.Request) {
 
 	isAdmin := currentUser.Role == string(constants.RoleAdmin)
 
-	slips, total, err := h.PaySlipService.GetPaySlips(currentUser.ID, isAdmin)
+	// 1. Parse Pagination Params
+	limitStr := r.URL.Query().Get("limit")
+	cursorStr := r.URL.Query().Get("cursor")
+
+	var limit int
+	if limitStr != "" {
+		limit, _ = strconv.Atoi(limitStr)
+	}
+
+	var afterID string
+	var afterCreatedAt *time.Time
+
+	if cursorStr != "" {
+		decoded, err := base64.StdEncoding.DecodeString(cursorStr)
+		if err == nil {
+			parts := strings.Split(string(decoded), "|")
+			if len(parts) == 2 {
+				ts, err := time.Parse(time.RFC3339, parts[0])
+				if err == nil {
+					afterCreatedAt = &ts
+					afterID = parts[1]
+				}
+			}
+		}
+	}
+
+	slips, total, err := h.PaySlipService.GetPaySlips(currentUser.ID, isAdmin, limit, afterID, afterCreatedAt)
 	if err != nil {
 		http.Error(w, "Failed to get pay slips", http.StatusInternalServerError)
 		return
 	}
 
+	// 2. Wrap Response and handle NextCursor
+	var nextCursor string
+	data := slips
+	if limit > 0 && len(slips) > limit {
+		data = slips[:limit]
+		last := data[limit-1]
+		nextCursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s|%s", last.CreatedAt.Format(time.RFC3339), last.ID)))
+	}
+
 	jsonResponse(w, http.StatusOK, models.PaySlipsResponse{
-		Data:  slips,
-		Total: total,
+		Data:       data,
+		Total:      total,
+		NextCursor: nextCursor,
 	})
 }
 

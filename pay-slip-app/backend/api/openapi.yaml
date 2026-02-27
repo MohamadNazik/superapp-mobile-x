@@ -81,6 +81,9 @@ components:
         createdAt:
           type: string
           format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     PaySlipsResponse:
       type: object
@@ -91,6 +94,9 @@ components:
             $ref: "#/components/schemas/PaySlip"
         total:
           type: integer
+        nextCursor:
+          type: string
+          description: Base64 encoded cursor for the next page
 
     CreatePaySlipRequest:
       type: object
@@ -293,6 +299,18 @@ paths:
     get:
       tags: [PaySlips]
       summary: List pay slips
+      parameters:
+        - name: limit
+          in: query
+          description: Max number of records to return
+          schema:
+            type: integer
+            default: 0
+        - name: cursor
+          in: query
+          description: Pagination cursor from previous response
+          schema:
+            type: string
       responses:
         "200":
           description: OK

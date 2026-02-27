@@ -68,15 +68,52 @@ func (s *PaySlipService) GetPaySlipByUserMonthYear(userID string, month, year in
 	return ps, nil
 }
 
-func (s *PaySlipService) GetPaySlips(userID string, isAdmin bool) ([]models.PaySlip, int, error) {
+func (s *PaySlipService) GetPaySlips(userID string, isAdmin bool, limit int, afterID string, afterCreatedAt *time.Time) ([]models.PaySlip, int, error) {
 	var query string
 	var args []interface{}
+	var countQuery string
+	var countArgs []interface{}
 
+	// 1. Get Total Count
 	if isAdmin {
-		query = "SELECT id, user_id, user_email, month, year, file_url, uploaded_by, created_at, updated_at FROM pay_slips ORDER BY created_at DESC"
+		countQuery = "SELECT COUNT(*) FROM pay_slips"
 	} else {
-		query = "SELECT id, user_id, user_email, month, year, file_url, uploaded_by, created_at, updated_at FROM pay_slips WHERE user_id = ? ORDER BY created_at DESC"
+		countQuery = "SELECT COUNT(*) FROM pay_slips WHERE user_id = ?"
+		countArgs = append(countArgs, userID)
+	}
+	var total int
+	err := s.db.Conn.QueryRow(countQuery, countArgs...).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 2. Fetch Paginated Data
+	baseQuery := "SELECT id, user_id, user_email, month, year, file_url, uploaded_by, created_at, updated_at FROM pay_slips"
+	whereClause := ""
+
+	if !isAdmin {
+		whereClause = "user_id = ?"
 		args = append(args, userID)
+	}
+
+	if afterCreatedAt != nil && afterID != "" {
+		if whereClause != "" {
+			whereClause += " AND "
+		}
+		whereClause += "(created_at < ? OR (created_at = ? AND id < ?))"
+		args = append(args, afterCreatedAt, afterCreatedAt, afterID)
+	}
+
+	query = baseQuery
+	if whereClause != "" {
+		query += " WHERE " + whereClause
+	}
+
+	query += " ORDER BY created_at DESC, id DESC"
+
+	if limit > 0 {
+		query += " LIMIT ?"
+		args = append(args, limit+1)
 	}
 
 	rows, err := s.db.Conn.Query(query, args...)
@@ -94,6 +131,5 @@ func (s *PaySlipService) GetPaySlips(userID string, isAdmin bool) ([]models.PayS
 		slips = append(slips, ps)
 	}
 
-	total := len(slips)
 	return slips, total, nil
 }

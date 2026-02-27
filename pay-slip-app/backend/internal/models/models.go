@@ -30,8 +30,9 @@ type PaySlip struct {
 
 // PaySlipsResponse is the unified response for GET /api/pay-slips.
 type PaySlipsResponse struct {
-	Data  []PaySlip `json:"data"`
-	Total int       `json:"total"`
+	Data       []PaySlip `json:"data"`
+	Total      int       `json:"total"`
+	NextCursor string    `json:"nextCursor,omitempty"`
 }
 
 // CreatePaySlipRequest is the JSON body for POST /api/pay-slips.
