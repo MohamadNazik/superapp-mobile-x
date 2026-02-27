@@ -112,6 +112,9 @@ func (s *PaySlipService) GetPaySlips(userID string, isAdmin bool, limit int, aft
 	query += " ORDER BY created_at DESC, id DESC"
 
 	if limit > 0 {
+		if limit > 100 {
+			limit = 100 // Hard cap to prevent memory issues
+		}
 		query += " LIMIT ?"
 		args = append(args, limit+1)
 	}

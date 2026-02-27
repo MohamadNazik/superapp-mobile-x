@@ -132,6 +132,9 @@ func (h *Handler) GetPaySlips(w http.ResponseWriter, r *http.Request) {
 	if limitStr != "" {
 		limit, _ = strconv.Atoi(limitStr)
 	}
+	if limit <= 0 {
+		limit = 20 // Default limit if not specified or invalid
+	}
 
 	var afterID string
 	var afterCreatedAt *time.Time
