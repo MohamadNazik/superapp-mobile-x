@@ -11,6 +11,7 @@ import (
 	"pay-slip-app/internal/handlers"
 	"pay-slip-app/internal/services"
 	"pay-slip-app/internal/storage"
+	"time"
 
 	"pay-slip-app/pkg/auth"
 
@@ -101,8 +102,16 @@ func main() {
 		port = "8081"
 	}
 
+	server := &http.Server{
+		Addr:         ":" + port,
+		Handler:      handler,
+		ReadTimeout:  10 * time.Second,  // Time to read the entire request
+		WriteTimeout: 15 * time.Second,  // Time to write the response
+		IdleTimeout:  120 * time.Second, // Time to keep idle connections open
+	}
+
 	log.Printf("Server running on :%s\n", port)
-	if err := http.ListenAndServe(":"+port, handler); err != nil {
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Failed to run server: %v", err)
 	}
 }
