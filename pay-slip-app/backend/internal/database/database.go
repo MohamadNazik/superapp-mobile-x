@@ -50,9 +50,7 @@ func NewDatabase() (*Database, error) {
 		defer ticker.Stop()
 		failCount := 0
 		for range ticker.C {
-			database.mu.Lock()
-			err := database.Conn.Ping()
-			database.mu.Unlock()
+			err := database.Ping()
 			if err != nil {
 				log.Printf("DB ping failed: %v", err)
 				failCount++
@@ -97,7 +95,7 @@ func (db *Database) Migrate() error {
 	if err != nil {
 		return fmt.Errorf("could not read migration file: %w", err)
 	}
-	if _, err := db.Conn.Exec(string(query)); err != nil {
+	if _, err := db.Exec(string(query)); err != nil {
 		return fmt.Errorf("could not apply migration: %w", err)
 	}
 	log.Println("Database migration applied successfully")
@@ -105,5 +103,34 @@ func (db *Database) Migrate() error {
 }
 
 // ── Database Methods ───────────────────────────────────────────────────────
-// (Database methods have been moved to internal/services)
+
+func (db *Database) Exec(query string, args ...any) (sql.Result, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	return db.Conn.Exec(query, args...)
+}
+
+func (db *Database) Query(query string, args ...any) (*sql.Rows, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	return db.Conn.Query(query, args...)
+}
+
+func (db *Database) QueryRow(query string, args ...any) *sql.Row {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	return db.Conn.QueryRow(query, args...)
+}
+
+func (db *Database) Ping() error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	return db.Conn.Ping()
+}
+
+func (db *Database) Close() error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	return db.Conn.Close()
+}
 

@@ -18,7 +18,7 @@ func NewUserService(database *database.Database) *UserService {
 func (s *UserService) GetUserByEmail(email string) (*models.User, error) {
 	user := &models.User{}
 	query := "SELECT id, email, role, created_at FROM users WHERE email = ?"
-	err := s.db.Conn.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Role, &user.CreatedAt)
+	err := s.db.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Role, &user.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +28,7 @@ func (s *UserService) GetUserByEmail(email string) (*models.User, error) {
 func (s *UserService) GetUserByID(id string) (*models.User, error) {
 	user := &models.User{}
 	query := "SELECT id, email, role, created_at FROM users WHERE id = ?"
-	err := s.db.Conn.QueryRow(query, id).Scan(&user.ID, &user.Email, &user.Role, &user.CreatedAt)
+	err := s.db.QueryRow(query, id).Scan(&user.ID, &user.Email, &user.Role, &user.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -42,14 +42,14 @@ func (s *UserService) CreateUser(email string) (*models.User, error) {
 		Role:  "user",
 	}
 	query := "INSERT INTO users (id, email, role) VALUES (?, ?, ?)"
-	if _, err := s.db.Conn.Exec(query, user.ID, user.Email, user.Role); err != nil {
+	if _, err := s.db.Exec(query, user.ID, user.Email, user.Role); err != nil {
 		return nil, err
 	}
 	return s.GetUserByEmail(email)
 }
 
 func (s *UserService) GetAllUsers() ([]models.User, error) {
-	rows, err := s.db.Conn.Query("SELECT id, email, role, created_at FROM users")
+	rows, err := s.db.Query("SELECT id, email, role, created_at FROM users")
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +67,6 @@ func (s *UserService) GetAllUsers() ([]models.User, error) {
 }
 
 func (s *UserService) UpdateUserRole(userID string, role string) error {
-	_, err := s.db.Conn.Exec("UPDATE users SET role = ? WHERE id = ?", role, userID)
+	_, err := s.db.Exec("UPDATE users SET role = ? WHERE id = ?", role, userID)
 	return err
 }

@@ -30,25 +30,25 @@ func (s *PaySlipService) InsertPaySlip(ps *models.PaySlip) error {
 	}
 	query := `INSERT INTO pay_slips (id, user_id, user_email, month, year, file_url, uploaded_by, created_at, updated_at) 
 	          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err := s.db.Conn.Exec(query, ps.ID, ps.UserID, ps.UserEmail, ps.Month, ps.Year, ps.FileURL, ps.UploadedBy, ps.CreatedAt, ps.UpdatedAt)
+	_, err := s.db.Exec(query, ps.ID, ps.UserID, ps.UserEmail, ps.Month, ps.Year, ps.FileURL, ps.UploadedBy, ps.CreatedAt, ps.UpdatedAt)
 	return err
 }
 
 func (s *PaySlipService) UpdatePaySlipFile(id, fileURL, uploadedBy string) error {
 	query := "UPDATE pay_slips SET file_url = ?, uploaded_by = ?, updated_at = ? WHERE id = ?"
-	_, err := s.db.Conn.Exec(query, fileURL, uploadedBy, time.Now(), id)
+	_, err := s.db.Exec(query, fileURL, uploadedBy, time.Now(), id)
 	return err
 }
 
 func (s *PaySlipService) DeletePaySlip(id string) error {
-	_, err := s.db.Conn.Exec("DELETE FROM pay_slips WHERE id = ?", id)
+	_, err := s.db.Exec("DELETE FROM pay_slips WHERE id = ?", id)
 	return err
 }
 
 func (s *PaySlipService) GetPaySlipByID(id string) (*models.PaySlip, error) {
 	ps := &models.PaySlip{}
 	query := "SELECT id, user_id, user_email, month, year, file_url, uploaded_by, created_at, updated_at FROM pay_slips WHERE id = ?"
-	err := s.db.Conn.QueryRow(query, id).Scan(&ps.ID, &ps.UserID, &ps.UserEmail, &ps.Month, &ps.Year, &ps.FileURL, &ps.UploadedBy, &ps.CreatedAt, &ps.UpdatedAt)
+	err := s.db.QueryRow(query, id).Scan(&ps.ID, &ps.UserID, &ps.UserEmail, &ps.Month, &ps.Year, &ps.FileURL, &ps.UploadedBy, &ps.CreatedAt, &ps.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (s *PaySlipService) GetPaySlipByID(id string) (*models.PaySlip, error) {
 func (s *PaySlipService) GetPaySlipByUserMonthYear(userID string, month, year int) (*models.PaySlip, error) {
 	ps := &models.PaySlip{}
 	query := "SELECT id, user_id, user_email, month, year, file_url, uploaded_by, created_at, updated_at FROM pay_slips WHERE user_id = ? AND month = ? AND year = ?"
-	err := s.db.Conn.QueryRow(query, userID, month, year).Scan(&ps.ID, &ps.UserID, &ps.UserEmail, &ps.Month, &ps.Year, &ps.FileURL, &ps.UploadedBy, &ps.CreatedAt, &ps.UpdatedAt)
+	err := s.db.QueryRow(query, userID, month, year).Scan(&ps.ID, &ps.UserID, &ps.UserEmail, &ps.Month, &ps.Year, &ps.FileURL, &ps.UploadedBy, &ps.CreatedAt, &ps.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -82,7 +82,7 @@ func (s *PaySlipService) GetPaySlips(userID string, isAdmin bool, limit int, aft
 		countArgs = append(countArgs, userID)
 	}
 	var total int
-	err := s.db.Conn.QueryRow(countQuery, countArgs...).Scan(&total)
+	err := s.db.QueryRow(countQuery, countArgs...).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -119,7 +119,7 @@ func (s *PaySlipService) GetPaySlips(userID string, isAdmin bool, limit int, aft
 		args = append(args, limit+1)
 	}
 
-	rows, err := s.db.Conn.Query(query, args...)
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return nil, 0, err
 	}
