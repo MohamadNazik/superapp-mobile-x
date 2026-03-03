@@ -1,5 +1,5 @@
 -- migrations/001_initial.sql
--- Pay slips are stored in Firestore; only users are managed in MySQL.
+-- Pay slip metadata is stored in MySQL; only the PDF files are in Firebase Storage.
 
 CREATE TABLE IF NOT EXISTS users (
     id         VARCHAR(255) PRIMARY KEY,
