@@ -154,8 +154,8 @@ export const useLeaves = ({ token, isAdmin, user }: UseLeavesProps) => {
   }) => {
     if (!token) return;
 
-    const start = new Date(data.startDate);
-    const end = new Date(data.endDate);
+    const start = new Date(`${data.startDate}T00:00:00`);
+    const end = new Date(`${data.endDate}T00:00:00`);
 
     if (start > end) {
       throw new Error("Start date cannot be after end date");

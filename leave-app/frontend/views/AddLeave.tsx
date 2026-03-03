@@ -33,7 +33,7 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
   const [leaveMode, setLeaveMode] = useState<"single" | "multiple">("multiple");
   const [isHalfDay, setIsHalfDay] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState<Date>(
-    formData.startDate ? new Date(formData.startDate) : new Date(),
+    formData.startDate ? new Date(`${formData.startDate}T00:00:00`) : new Date(),
   );
   const [halfDayPeriod, setHalfDayPeriod] = useState<
     "morning" | "evening" | null
@@ -48,7 +48,7 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
 
   useEffect(() => {
     if (formData.startDate) {
-      setCalendarMonth(new Date(formData.startDate));
+      setCalendarMonth(new Date(`${formData.startDate}T00:00:00`));
     }
   }, [formData.startDate]);
 
@@ -59,7 +59,7 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
     }
 
     if (leaveMode === "single") {
-      const date = new Date(formData.startDate);
+      const date = new Date(`${formData.startDate}T00:00:00`);
       const day = date.getDay();
       const isWeekend = day === 0 || day === 6;
       const isHoliday = holidays.includes(formData.startDate);
@@ -74,8 +74,8 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
     }
 
     if (formData.startDate && formData.endDate) {
-      const start = new Date(formData.startDate);
-      const end = new Date(formData.endDate);
+      const start = new Date(`${formData.startDate}T00:00:00`);
+      const end = new Date(`${formData.endDate}T00:00:00`);
       if (start <= end) {
         setDuration(
           formatDuration(formData.startDate, formData.endDate, holidays),
@@ -134,8 +134,8 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
   const isSelectedRange = (date: Date) => {
     if (!formData.startDate || !formData.endDate) return false;
 
-    const start = new Date(formData.startDate);
-    const end = new Date(formData.endDate);
+    const start = new Date(`${formData.startDate}T00:00:00`);
+    const end = new Date(`${formData.endDate}T00:00:00`);
 
     // Normalize all dates to midnight
     const normalize = (d: Date) =>
@@ -296,7 +296,6 @@ export const AddLeave: React.FC<AddLeaveProps> = ({
                 </div>
               </div>
 
-              {/* Add this below */}
               {isHalfDay && (
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">
