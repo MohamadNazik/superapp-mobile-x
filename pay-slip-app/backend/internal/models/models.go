@@ -3,6 +3,7 @@ package models
 
 import (
 	"errors"
+	"pay-slip-app/internal/constants"
 	"time"
 )
 
@@ -65,7 +66,7 @@ type UpdateUserRoleRequest struct {
 }
 
 func (r *UpdateUserRoleRequest) Validate() error {
-	if r.Role != "admin" && r.Role != "user" {
+	if r.Role != string(constants.RoleAdmin) && r.Role != string(constants.RoleUser) {
 		return errors.New("role must be either 'admin' or 'user'")
 	}
 	return nil
