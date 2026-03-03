@@ -1,6 +1,7 @@
 package services
 
 import (
+	"pay-slip-app/internal/constants"
 	"pay-slip-app/internal/database"
 	"pay-slip-app/internal/models"
 
@@ -39,7 +40,7 @@ func (s *UserService) CreateUser(email string) (*models.User, error) {
 	user := &models.User{
 		ID:    uuid.New().String(),
 		Email: email,
-		Role:  "user",
+		Role:  string(constants.RoleUser),
 	}
 	query := "INSERT INTO users (id, email, role) VALUES (?, ?, ?)"
 	if _, err := s.db.Exec(query, user.ID, user.Email, user.Role); err != nil {
