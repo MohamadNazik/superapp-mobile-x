@@ -138,11 +138,6 @@ func main() {
 }
 
 func cors(next http.Handler) http.Handler {
-	allowedOrigin := os.Getenv("FRONTEND_URL")
-	if allowedOrigin == "" {
-		log.Println("CRITICAL: FRONTEND_URL not set. CORS is fully disabled.")
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 
@@ -152,21 +147,11 @@ func cors(next http.Handler) http.Handler {
 			return
 		}
 
-		// Direct match against the single allowed origin (No wildcards permitted).
-		isAllowed := origin == allowedOrigin && allowedOrigin != ""
-
-		if origin != "" && !isAllowed {
-			log.Printf("CORS: Rejected request from unauthorized origin: %s", origin)
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-
-		if isAllowed {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-			w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
-		}
+		// Allow all origins (wildcard).
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
