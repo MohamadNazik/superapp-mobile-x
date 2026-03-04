@@ -1,4 +1,4 @@
-import { Leave, UserInfo, Allowances, Holiday } from "../types";
+import { Leave, UserInfo, Allowances, Holiday, CreateLeaveRequest } from "../types";
 
 // Read the API base URL from environment (Vite provides import.meta.env for client code).
 // Use a sensible fallback for local dev when using the Vite dev proxy.
@@ -96,7 +96,7 @@ export const api = {
 
   createLeave: async (
     token: string,
-    data: Omit<Leave, "id" | "status" | "createdAt" | "userId" | "userEmail">,
+    data: CreateLeaveRequest,
   ): Promise<Leave> => {
     return request<Leave>("/leaves", token, {
       method: "POST",
@@ -126,9 +126,9 @@ export const api = {
     id: string,
     comment?: string,
   ): Promise<Leave> => {
-    return request<Leave>(`/leaves/${id}/approve`, token, {
-      method: "POST",
-      body: JSON.stringify({ comment }),
+    return request<Leave>(`/leaves/${id}`, token, {
+      method: "PUT",
+      body: JSON.stringify({ status: "approved", comment }),
     });
   },
 
@@ -137,9 +137,9 @@ export const api = {
     id: string,
     comment?: string,
   ): Promise<Leave> => {
-    return request<Leave>(`/leaves/${id}/reject`, token, {
-      method: "POST",
-      body: JSON.stringify({ comment }),
+    return request<Leave>(`/leaves/${id}`, token, {
+      method: "PUT",
+      body: JSON.stringify({ status: "rejected", comment }),
     });
   },
 

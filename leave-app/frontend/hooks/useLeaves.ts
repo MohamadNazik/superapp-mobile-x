@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Leave, LeaveType, LeaveStatus, UserInfo } from "../types";
+import { Leave, LeaveType, LeaveStatus, UserInfo, CreateLeaveRequest } from "../types";
 import { api } from "../api/client";
 import { formatDuration } from "../utils/formatters";
 
@@ -66,9 +66,7 @@ export const useLeaves = ({ token, isAdmin, user }: UseLeavesProps) => {
     const used = { sick: 0, annual: 0, casual: 0 };
 
     myActiveLeaves.forEach((l) => {
-      const days = l.isHalfDay
-        ? 0.5
-        : formatDuration(l.startDate, l.endDate, holidays);
+      const days = l.totalLeaveDays;
       if (used[l.type] !== undefined) {
         used[l.type] += days;
       }
@@ -144,14 +142,7 @@ export const useLeaves = ({ token, isAdmin, user }: UseLeavesProps) => {
     refresh();
   };
 
-  const createLeave = async (data: {
-    type: LeaveType;
-    startDate: string;
-    endDate: string;
-    reason: string;
-    isHalfDay?: boolean;
-    halfDayPeriod?: "morning" | "evening" | null;
-  }) => {
+  const createLeave = async (data: CreateLeaveRequest) => {
     if (!token) return;
 
     const start = new Date(`${data.startDate.split("T")[0].split(" ")[0]}T00:00:00`);

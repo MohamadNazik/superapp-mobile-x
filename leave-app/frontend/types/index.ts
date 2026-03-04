@@ -43,6 +43,15 @@ export interface Leave {
   days: LeaveDay[];
 }
 
+export interface CreateLeaveRequest {
+  type: LeaveType;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  isHalfDay?: boolean;
+  halfDayPeriod?: "morning" | "evening" | null;
+}
+
 export interface DateRange {
   start: string;
   end: string;
