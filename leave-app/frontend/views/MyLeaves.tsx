@@ -146,17 +146,27 @@ export const MyLeaves: React.FC<MyLeavesProps> = ({
                 </h3>
 
                 <div className="mt-2 space-y-1.5">
-                  {/* One day — single date, Sequence — From/To */}
+                  {/* Duration and Date details */}
                   {leave.startDate === leave.endDate ? (
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <span className="font-semibold text-slate-600">
-                        Date:
-                      </span>
-                      {formatDate(leave.startDate)}
-                    </div>
-                  ) : (
                     <>
                       <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="font-semibold text-slate-600">
+                          Duration:
+                        </span>
+                        {leave.days?.[0]?.isHalfDay 
+                          ? `Half Day (${leave.days[0].halfDayPeriod ? (leave.days[0].halfDayPeriod.charAt(0).toUpperCase() + leave.days[0].halfDayPeriod.slice(1)) : ""})` 
+                          : "Full Day"}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="font-semibold text-slate-600">
+                          Date:
+                        </span>
+                        {formatDate(leave.startDate)}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {/* <div className="flex items-center gap-2 text-xs text-slate-500">
                         <span className="font-semibold text-slate-600">
                           From:
                         </span>
@@ -167,33 +177,35 @@ export const MyLeaves: React.FC<MyLeavesProps> = ({
                           To:
                         </span>
                         {formatDate(leave.endDate)}
+                      </div> */}
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="font-semibold text-slate-600">
+                          Duration:
+                        </span>
+                        {leave.totalLeaveDays} Days
                       </div>
-                    </>
-                  )}
-
-                  {/* Half day or Full day — only for one day */}
-                  {leave.startDate === leave.endDate && (
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <span className="font-semibold text-slate-600">
-                        Duration:
-                      </span>
-                      {leave.isHalfDay ? "Half Day" : "Full Day"}
+                      <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                        <span className="font-semibold text-slate-600">
+                          Days:
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {leave.days?.map((day) => (
+                          <span
+                            key={day.id}
+                            className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-medium border border-slate-200"
+                          >
+                            {new Intl.DateTimeFormat("en-US", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            }).format(new Date(`${day.date}T00:00:00`))}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
 
-                  {/* Morning or Evening — only for half day */}
-                  {leave.startDate === leave.endDate &&
-                    leave.isHalfDay &&
-                    leave.halfDayPeriod && (
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span className="font-semibold text-slate-600">
-                          Period:
-                        </span>
-                        <span className="capitalize">
-                          {leave.halfDayPeriod}
-                        </span>
-                      </div>
-                    )}
                 </div>
 
                 {leave.status === "rejected" && leave.approverComment && (

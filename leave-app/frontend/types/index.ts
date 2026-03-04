@@ -18,6 +18,14 @@ export interface UserInfo {
   allowances: Allowances;
 }
 
+export interface LeaveDay {
+  id: string;
+  leaveId: string;
+  date: string;
+  isHalfDay: boolean;
+  halfDayPeriod: "morning" | "evening" | null;
+}
+
 export interface Leave {
   id: string;
   userId: string;
@@ -25,12 +33,14 @@ export interface Leave {
   type: LeaveType;
   startDate: string;
   endDate: string;
+  totalLeaveDays: number;
   reason: string;
   status: LeaveStatus;
   createdAt: string;
   approverComment?: string;
   isHalfDay?: boolean;
   halfDayPeriod?: "morning" | "evening" | null;
+  days: LeaveDay[];
 }
 
 export interface DateRange {
