@@ -77,15 +77,18 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 	}
 	userEmail := targetUser.Email
 
-	// Upsert logic
+	// Upsert check
 	existing, err := h.PaySlipService.GetPaySlipByUserMonthYear(req.UserID, req.Month, req.Year)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 
+	// Extract the clean path
+	cleanPath := h.Storage.ExtractPathFromURL(req.FileURL)
+
 	if existing != nil {
-		if err := h.PaySlipService.UpdatePaySlipFile(existing.ID, req.FileURL, currentUser.ID); err != nil {
+		if err := h.PaySlipService.UpdatePaySlipFile(existing.ID, cleanPath, currentUser.ID); err != nil {
 			http.Error(w, "Failed to update pay slip", http.StatusInternalServerError)
 			return
 		}
@@ -94,6 +97,12 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to retrieve updated pay slip", http.StatusInternalServerError)
 			return
 		}
+
+		// Sign the URL before sending back
+		if signed, err := h.Storage.GetSignedURL(updated.FileURL); err == nil {
+			updated.FileURL = signed
+		}
+
 		jsonResponse(w, http.StatusOK, updated)
 		return
 	}
@@ -103,7 +112,7 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 		UserEmail:  userEmail,
 		Month:      req.Month,
 		Year:       req.Year,
-		FileURL:    req.FileURL,
+		FileURL:    cleanPath,
 		UploadedBy: currentUser.ID,
 		CreatedAt:  time.Now(),
 	}
@@ -111,6 +120,12 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to save pay slip", http.StatusInternalServerError)
 		return
 	}
+
+	// Sign the URL before sending back to frontend
+	if signed, err := h.Storage.GetSignedURL(ps.FileURL); err == nil {
+		ps.FileURL = signed
+	}
+
 	jsonResponse(w, http.StatusCreated, ps)
 }
 
@@ -159,11 +174,20 @@ func (h *Handler) GetPaySlips(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Wrap Response and handle NextCursor
-	var nextCursor string
+	// 2. Refresh Signed URLs for the response
 	data := slips
 	if limit > 0 && len(slips) > limit {
 		data = slips[:limit]
+	}
+
+	for i := range data {
+		if signed, err := h.Storage.GetSignedURL(data[i].FileURL); err == nil {
+			data[i].FileURL = signed
+		}
+	}
+
+	var nextCursor string
+	if limit > 0 && len(slips) > limit {
 		last := data[limit-1]
 		nextCursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s|%s", last.CreatedAt.Format(time.RFC3339), last.ID)))
 	}
@@ -192,6 +216,11 @@ func (h *Handler) GetPaySlipByID(w http.ResponseWriter, r *http.Request) {
 	if currentUser.Role != string(constants.RoleAdmin) && ps.UserID != currentUser.ID {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
+	}
+
+	// Generate fresh signed URL
+	if signed, err := h.Storage.GetSignedURL(ps.FileURL); err == nil {
+		ps.FileURL = signed
 	}
 
 	jsonResponse(w, http.StatusOK, ps)
