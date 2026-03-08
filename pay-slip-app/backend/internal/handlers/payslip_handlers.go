@@ -210,7 +210,7 @@ func (h *Handler) GetPaySlipByID(w http.ResponseWriter, r *http.Request) {
 
 	// Generate fresh signed URL for the explicitly requested file
 	if signed, err := h.Storage.GetSignedURL(ps.FilePath); err == nil {
-		ps.FileURL = signed
+		ps.SignedURL = signed
 		ps.FilePath = "" // No need to return both in single fetch, per latest review
 	}
 

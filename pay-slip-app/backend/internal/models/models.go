@@ -25,7 +25,7 @@ type PaySlip struct {
 	Month      int       `json:"month"`
 	Year       int       `json:"year"`
 	FilePath   string    `json:"filePath,omitempty"` // Firebase Storage clean path. Maps to 'file_path' in DB.
-	FileURL    string    `json:"fileUrl,omitempty"`  // Signed URL for access (provided only in single-fetch)
+	SignedURL  string    `json:"signedUrl,omitempty"` // Signed URL for access (provided only in single-fetch)
 	UploadedBy string    `json:"uploadedBy"`
 	CreatedAt  time.Time `json:"createdAt"`
 	UpdatedAt  time.Time `json:"updatedAt"`
