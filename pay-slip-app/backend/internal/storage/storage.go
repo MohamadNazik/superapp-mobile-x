@@ -42,13 +42,13 @@ func New(client *storage.Client, bucket string) *FirebaseStorage {
 }
 
 // UploadFile uploads a file to Firebase Storage and returns the clean storage path.
-func (s *FirebaseStorage) UploadFile(ctx context.Context, r io.Reader, originalFilename string) (string, error) {
+func (s *FirebaseStorage) UploadFile(ctx context.Context, r io.Reader, originalFilename string, contentType string) (string, error) {
 	ext := filepath.Ext(originalFilename)
 	objectPath := "pay-slips/" + uuid.New().String() + ext
 
 	wc := s.client.Bucket(s.bucket).Object(objectPath).NewWriter(ctx)
-	// Set Content-Type based on extension for better browser handling
-	wc.ContentType = s.getContentType(ext)
+	// Set Content-Type for better browser handling
+	wc.ContentType = contentType
 	
 	if _, err := io.Copy(wc, r); err != nil {
 		_ = wc.Close()
@@ -61,15 +61,3 @@ func (s *FirebaseStorage) UploadFile(ctx context.Context, r io.Reader, originalF
 	return objectPath, nil
 }
 
-func (s *FirebaseStorage) getContentType(ext string) string {
-	switch ext {
-	case ".pdf":
-		return "application/pdf"
-	case ".png":
-		return "image/png"
-	case ".jpg", ".jpeg":
-		return "image/jpeg"
-	default:
-		return "application/octet-stream"
-	}
-}

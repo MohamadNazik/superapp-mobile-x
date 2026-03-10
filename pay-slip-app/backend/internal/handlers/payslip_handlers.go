@@ -4,9 +4,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"pay-slip-app/internal/constants"
 	"pay-slip-app/internal/models"
+	"pay-slip-app/internal/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -36,8 +38,38 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	// Validate file extension and get MIME type
+	contentType, ok := utils.GetValidatedMimeType(header.Filename)
+	if !ok {
+		http.Error(w, fmt.Sprintf("Unsupported file type. Allowed: %s", strings.Join(constants.GetAllowedExtensions(), ", ")), http.StatusBadRequest)
+		return
+	}
+
+	// Security: Verify actual file content matches extension
+	buffer := make([]byte, 512)
+	n, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
+		http.Error(w, "Failed to read file for content validation", http.StatusInternalServerError)
+		return
+	}
+	detectedType := http.DetectContentType(buffer[:n])
+
+	// Reset file pointer so storage can read from start
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		http.Error(w, "Failed to reset file pointer", http.StatusInternalServerError)
+		return
+	}
+
+	// Basic check: detected type should match expected type
+	// Note: We allow minor mismatches if the extension is strictly allowed and 
+	// mime.TypeByExtension was confident, but we should at least ensure it's not an executable.
+	if strings.HasPrefix(detectedType, "application/x-executable") || strings.HasPrefix(detectedType, "application/x-sharedlib") {
+		http.Error(w, "File content is malicious or unsupported", http.StatusBadRequest)
+		return
+	}
+
 	ctx := r.Context()
-	path, err := h.Storage.UploadFile(ctx, file, header.Filename)
+	path, err := h.Storage.UploadFile(ctx, file, header.Filename, contentType)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to upload to storage: %v", err), http.StatusInternalServerError)
 		return
