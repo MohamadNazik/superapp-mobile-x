@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"pay-slip-app/internal/database"
 	"pay-slip-app/internal/models"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -68,8 +69,29 @@ func (s *PaySlipService) GetPaySlipByUserMonthYear(userID string, month, year in
 	return ps, nil
 }
 
-func (s *PaySlipService) GetPaySlips(limit int, afterID string, afterCreatedAt *time.Time) ([]models.PaySlip, int, error) {
-	return s.fetchPaySlips("", nil, limit, afterID, afterCreatedAt)
+func (s *PaySlipService) GetPaySlips(limit int, afterID string, afterCreatedAt *time.Time, userID string, month, year int) ([]models.PaySlip, int, error) {
+	var whereParts []string
+	var args []interface{}
+
+	if userID != "" {
+		whereParts = append(whereParts, "user_id = ?")
+		args = append(args, userID)
+	}
+	if month > 0 {
+		whereParts = append(whereParts, "month = ?")
+		args = append(args, month)
+	}
+	if year > 0 {
+		whereParts = append(whereParts, "year = ?")
+		args = append(args, year)
+	}
+
+	whereClause := ""
+	if len(whereParts) > 0 {
+		whereClause = strings.Join(whereParts, " AND ")
+	}
+
+	return s.fetchPaySlips(whereClause, args, limit, afterID, afterCreatedAt)
 }
 
 func (s *PaySlipService) GetPaySlipsByUserID(userID string, limit int, afterID string, afterCreatedAt *time.Time) ([]models.PaySlip, int, error) {

@@ -116,77 +116,77 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusCreated, ps)
 }
 
-// GetPaySlips handles GET /api/pay-slips
-func (h *Handler) GetPaySlips(w http.ResponseWriter, r *http.Request) {
+// GetMyPaySlips handles GET /api/pay-slips - Returns only the caller's own pay slips
+func (h *Handler) GetMyPaySlips(w http.ResponseWriter, r *http.Request) {
 	currentUser := mustGetUser(r)
 	if currentUser == nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	isAdmin := currentUser.Role == string(constants.RoleAdmin)
-
-	// 1. Parse Pagination Params
-	limitStr := r.URL.Query().Get("limit")
-	cursorStr := r.URL.Query().Get("cursor")
-
-	var limit int
-	if limitStr != "" {
-		limit, _ = strconv.Atoi(limitStr)
-	}
-	if limit <= 0 {
-		limit = 20 // Default limit if not specified or invalid
+	limit, afterID, afterCreatedAt, err := h.parsePagination(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	var afterID string
-	var afterCreatedAt *time.Time
-
-	if cursorStr != "" {
-		decoded, err := base64.StdEncoding.DecodeString(cursorStr)
-		if err == nil {
-			parts := strings.Split(string(decoded), "|")
-			if len(parts) == 2 {
-				ts, err := time.Parse(time.RFC3339, parts[0])
-				if err == nil {
-					afterCreatedAt = &ts
-					afterID = parts[1]
-				}
-			}
-		}
-	}
-
-	var slips []models.PaySlip
-	var total int
-	var err error
-	if isAdmin {
-		slips, total, err = h.PaySlipService.GetPaySlips(limit, afterID, afterCreatedAt)
-	} else {
-		slips, total, err = h.PaySlipService.GetPaySlipsByUserID(currentUser.ID, limit, afterID, afterCreatedAt)
-	}
-
+	slips, total, err := h.PaySlipService.GetPaySlipsByUserID(currentUser.ID, limit, afterID, afterCreatedAt)
 	if err != nil {
 		http.Error(w, "Failed to get pay slips", http.StatusInternalServerError)
 		return
 	}
 
-	// 2. Return clean paths only for the list (per latest PR review)
-	data := slips
-	if limit > 0 && len(slips) > limit {
-		data = slips[:limit]
+	h.respondWithPaySlips(w, slips, total, limit)
+}
+
+// GetAllPaySlips handles GET /api/pay-slips/all [admin only]
+func (h *Handler) GetAllPaySlips(w http.ResponseWriter, r *http.Request) {
+	currentUser := mustGetUser(r)
+	if currentUser == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	if currentUser.Role != string(constants.RoleAdmin) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
 	}
 
-	var nextCursor *string
-	if limit > 0 && len(slips) > limit {
-		last := data[limit-1]
-		cursor := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s|%s", last.CreatedAt.Format(time.RFC3339), last.ID)))
-		nextCursor = &cursor
+	limit, afterID, afterCreatedAt, err := h.parsePagination(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	jsonResponse(w, http.StatusOK, models.PaySlipsResponse{
-		Data:       data,
-		Total:      total,
-		NextCursor: nextCursor,
-	})
+	// 2. Parse Filtering Params
+	userID := r.URL.Query().Get("userId")
+	yearStr := r.URL.Query().Get("year")
+	monthStr := r.URL.Query().Get("month")
+
+	var year, month int
+	if yearStr != "" {
+		var err error
+		year, err = strconv.Atoi(yearStr)
+		if err != nil {
+			http.Error(w, "Invalid year parameter: must be an integer", http.StatusBadRequest)
+			return
+		}
+	}
+	if monthStr != "" {
+		var err error
+		month, err = strconv.Atoi(monthStr)
+		if err != nil || month < 1 || month > 12 {
+			http.Error(w, "Invalid month parameter: must be between 1 and 12", http.StatusBadRequest)
+			return
+		}
+	}
+
+	slips, total, err := h.PaySlipService.GetPaySlips(limit, afterID, afterCreatedAt, userID, month, year)
+	if err != nil {
+		http.Error(w, "Failed to get pay slips", http.StatusInternalServerError)
+		return
+	}
+
+	h.respondWithPaySlips(w, slips, total, limit)
 }
 
 // GetPaySlipByID handles GET /api/pay-slips/{id}
@@ -240,4 +240,60 @@ func (h *Handler) DeletePaySlip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// ── Private Helpers ──────────────────────────────────────────────────────────
+
+func (h *Handler) parsePagination(r *http.Request) (int, string, *time.Time, error) {
+	limitStr := r.URL.Query().Get("limit")
+	cursorStr := r.URL.Query().Get("cursor")
+
+	var limit int
+	if limitStr != "" {
+		var err error
+		limit, err = strconv.Atoi(limitStr)
+		if err != nil {
+			return 0, "", nil, fmt.Errorf("Invalid 'limit' parameter: must be an integer")
+		}
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 50 {
+		limit = 50
+	}
+
+	var afterID string
+	var afterCreatedAt *time.Time
+
+	if cursorStr != "" {
+		decoded, _ := base64.StdEncoding.DecodeString(cursorStr)
+		parts := strings.Split(string(decoded), "|")
+
+		if ts, err := time.Parse(time.RFC3339, parts[0]); err == nil && len(parts) == 2 {
+			afterCreatedAt = &ts
+			afterID = parts[1]
+		}
+	}
+	return limit, afterID, afterCreatedAt, nil
+}
+
+func (h *Handler) respondWithPaySlips(w http.ResponseWriter, slips []models.PaySlip, total int, limit int) {
+	data := slips
+	if limit > 0 && len(slips) > limit {
+		data = slips[:limit]
+	}
+
+	var nextCursor *string
+	if limit > 0 && len(slips) > limit {
+		last := data[limit-1]
+		cursor := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s|%s", last.CreatedAt.Format(time.RFC3339), last.ID)))
+		nextCursor = &cursor
+	}
+
+	jsonResponse(w, http.StatusOK, models.PaySlipsResponse{
+		Data:       data,
+		Total:      total,
+		NextCursor: nextCursor,
+	})
 }

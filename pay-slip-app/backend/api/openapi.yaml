@@ -306,14 +306,16 @@ paths:
 
     get:
       tags: [PaySlips]
-      summary: List pay slips
+      summary: List my pay slips
+      description: Returns only the pay slips belonging to the authenticated user.
       parameters:
         - name: limit
           in: query
-          description: Max number of records to return (default 20, max 100)
+          description: Max number of records to return (default 20, max 50)
           schema:
             type: integer
             default: 20
+            maximum: 50
         - name: cursor
           in: query
           description: Pagination cursor from previous response
@@ -326,6 +328,59 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaySlipsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/pay-slips/all:
+    get:
+      tags: [PaySlips]
+      summary: List all pay slips [admin only]
+      description: Returns all pay slips across all users. Supports optional filtering by userId and period.
+      parameters:
+        - name: limit
+          in: query
+          description: Max number of records to return (default 20, max 50)
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+        - name: cursor
+          in: query
+          description: Pagination cursor from previous response
+          schema:
+            type: string
+        - name: userId
+          in: query
+          description: Filter by a specific user ID
+          schema:
+            type: string
+        - name: year
+          in: query
+          description: Filter by year
+          schema:
+            type: integer
+            example: 2025
+        - name: month
+          in: query
+          description: Filter by month (1-12)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+            example: 3
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaySlipsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /api/pay-slips/{id}:
     get:

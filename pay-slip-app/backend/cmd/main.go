@@ -72,7 +72,8 @@ func main() {
 	// Pay slip endpoints
 	mux.Handle("POST /api/upload", auth(http.HandlerFunc(h.UploadFile)))
 	mux.Handle("POST /api/pay-slips", auth(http.HandlerFunc(h.CreatePaySlip)))
-	mux.Handle("GET /api/pay-slips", auth(http.HandlerFunc(h.GetPaySlips)))
+	mux.Handle("GET /api/pay-slips", auth(http.HandlerFunc(h.GetMyPaySlips)))
+	mux.Handle("GET /api/pay-slips/all", auth(http.HandlerFunc(h.GetAllPaySlips)))
 	mux.Handle("GET /api/pay-slips/{id}", auth(http.HandlerFunc(h.GetPaySlipByID)))
 	mux.Handle("DELETE /api/pay-slips/{id}", auth(http.HandlerFunc(h.DeletePaySlip)))
 
