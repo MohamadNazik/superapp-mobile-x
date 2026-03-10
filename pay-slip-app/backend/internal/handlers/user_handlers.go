@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"pay-slip-app/internal/constants"
 	"pay-slip-app/internal/models"
+	"time"
 )
 
 // ── User handlers ─────────────────────────────────────────────────────────────
@@ -36,6 +39,46 @@ func (h *Handler) GetUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonResponse(w, http.StatusOK, users)
+}
+
+// GetUsersV2 handles GET /api/v2/users  [admin only]
+func (h *Handler) GetUsersV2(w http.ResponseWriter, r *http.Request) {
+	currentUser := mustGetUser(r)
+	if currentUser == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	if currentUser.Role != string(constants.RoleAdmin) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	limit, afterID, afterCreatedAt, err := h.parsePagination(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	users, total, err := h.UserService.GetUsers(limit, afterID, afterCreatedAt)
+	if err != nil {
+		http.Error(w, "Failed to get users", http.StatusInternalServerError)
+		return
+	}
+
+	data := users
+	var nextCursor *string
+	if limit > 0 && len(users) > limit {
+		data = users[:limit]
+		last := data[limit-1]
+		cursor := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s|%s", last.CreatedAt.Format(time.RFC3339), last.ID)))
+		nextCursor = &cursor
+	}
+
+	jsonResponse(w, http.StatusOK, models.UsersResponse{
+		Data:       data,
+		Total:      total,
+		NextCursor: nextCursor,
+	})
 }
 
 // UpdateUserRole handles PUT /api/users/{id}/role  [admin only]

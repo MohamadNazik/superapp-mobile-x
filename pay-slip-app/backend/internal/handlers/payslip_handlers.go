@@ -8,7 +8,6 @@ import (
 	"pay-slip-app/internal/constants"
 	"pay-slip-app/internal/models"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -244,48 +243,11 @@ func (h *Handler) DeletePaySlip(w http.ResponseWriter, r *http.Request) {
 
 // ── Private Helpers ──────────────────────────────────────────────────────────
 
-func (h *Handler) parsePagination(r *http.Request) (int, string, *time.Time, error) {
-	limitStr := r.URL.Query().Get("limit")
-	cursorStr := r.URL.Query().Get("cursor")
-
-	var limit int
-	if limitStr != "" {
-		var err error
-		limit, err = strconv.Atoi(limitStr)
-		if err != nil {
-			return 0, "", nil, fmt.Errorf("Invalid 'limit' parameter: must be an integer")
-		}
-	}
-	if limit <= 0 {
-		limit = 20
-	}
-	if limit > 50 {
-		limit = 50
-	}
-
-	var afterID string
-	var afterCreatedAt *time.Time
-
-	if cursorStr != "" {
-		decoded, _ := base64.StdEncoding.DecodeString(cursorStr)
-		parts := strings.Split(string(decoded), "|")
-
-		if ts, err := time.Parse(time.RFC3339, parts[0]); err == nil && len(parts) == 2 {
-			afterCreatedAt = &ts
-			afterID = parts[1]
-		}
-	}
-	return limit, afterID, afterCreatedAt, nil
-}
-
 func (h *Handler) respondWithPaySlips(w http.ResponseWriter, slips []models.PaySlip, total int, limit int) {
 	data := slips
-	if limit > 0 && len(slips) > limit {
-		data = slips[:limit]
-	}
-
 	var nextCursor *string
 	if limit > 0 && len(slips) > limit {
+		data = slips[:limit]
 		last := data[limit-1]
 		cursor := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s|%s", last.CreatedAt.Format(time.RFC3339), last.ID)))
 		nextCursor = &cursor

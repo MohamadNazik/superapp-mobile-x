@@ -134,13 +134,6 @@ func (s *PaySlipService) fetchPaySlips(whereClause string, args []interface{}, l
 
 	query += " ORDER BY created_at DESC, id DESC"
 
-	const maxLimit = 100
-	if limit <= 0 {
-		limit = 10 // default limit
-	}
-	if limit > maxLimit {
-		limit = maxLimit
-	}
 	query += " LIMIT ?"
 	args = append(args, limit+1)
 

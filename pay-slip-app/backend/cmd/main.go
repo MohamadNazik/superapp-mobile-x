@@ -67,6 +67,7 @@ func main() {
 	// User endpoints
 	mux.Handle("GET /api/me", auth(http.HandlerFunc(h.GetCurrentUser)))
 	mux.Handle("GET /api/users", auth(http.HandlerFunc(h.GetUsers)))
+	mux.Handle("GET /api/v2/users", auth(http.HandlerFunc(h.GetUsersV2)))
 	mux.Handle("PUT /api/users/{id}/role", auth(http.HandlerFunc(h.UpdateUserRole)))
 
 	// Pay slip endpoints

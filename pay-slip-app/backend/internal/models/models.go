@@ -38,6 +38,13 @@ type PaySlipsResponse struct {
 	NextCursor *string   `json:"nextCursor"`
 }
 
+// UsersResponse is the unified response for GET /api/v2/users.
+type UsersResponse struct {
+	Data       []User  `json:"data"`
+	Total      int     `json:"total"`
+	NextCursor *string `json:"nextCursor"`
+}
+
 // CreatePaySlipRequest is the JSON body for POST /api/pay-slips.
 type CreatePaySlipRequest struct {
 	UserID   string `json:"userId"`
