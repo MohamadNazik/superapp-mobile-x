@@ -41,6 +41,65 @@ func (s *PaySlipService) UpdatePaySlipFile(id, filePath, uploadedBy string) erro
 	return err
 }
 
+func (s *PaySlipService) UpsertPaySlip(ps *models.PaySlip) (*models.PaySlip, error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	// 1. Lock existing row or potential slot using SELECT ... FOR UPDATE
+	// Note: In MySQL, if the record doesn't exist, this might not lock anything unless there's an index.
+	// However, we have an index on (user_id, month, year) [via idx_payslips_user_date, though it's partial or we should rely on unique constraint if it existed].
+	// Actually, the primary way to prevent duplicates is row-level locking on existing OR gap locking if applicable.
+	// A more robust way in MySQL without a UNIQUE constraint is to lock the user record or a mutex table, 
+	// but SELECT ... FOR UPDATE on the specific criteria is the standard approach for "upsert-gate".
+
+	var existingID string
+	query := "SELECT id FROM pay_slips WHERE user_id = ? AND month = ? AND year = ? FOR UPDATE"
+	err = tx.QueryRow(query, ps.UserID, ps.Month, ps.Year).Scan(&existingID)
+
+	now := time.Now()
+	switch err {
+	case sql.ErrNoRows:
+		// INSERT logic
+		if ps.ID == "" {
+			ps.ID = uuid.New().String()
+		}
+		ps.CreatedAt = now
+		ps.UpdatedAt = now
+		const insertQuery = `INSERT INTO pay_slips (id, user_id, user_email, month, year, file_path, uploaded_by, created_at, updated_at) 
+		                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		_, err = tx.Exec(insertQuery, ps.ID, ps.UserID, ps.UserEmail, ps.Month, ps.Year, ps.FilePath, ps.UploadedBy, ps.CreatedAt, ps.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+	case nil:
+		// UPDATE logic
+		ps.ID = existingID
+		ps.UpdatedAt = now
+		const updateQuery = "UPDATE pay_slips SET file_path = ?, uploaded_by = ?, updated_at = ? WHERE id = ?"
+		_, err = tx.Exec(updateQuery, ps.FilePath, ps.UploadedBy, ps.UpdatedAt, ps.ID)
+		if err != nil {
+			return nil, err
+		}
+		// Refresh ps fields by fetching full record (optional but good for consistency)
+		const selectQuery = "SELECT user_email, created_at FROM pay_slips WHERE id = ?"
+		err = tx.QueryRow(selectQuery, ps.ID).Scan(&ps.UserEmail, &ps.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return ps, nil
+}
+
 func (s *PaySlipService) DeletePaySlip(id string) error {
 	_, err := s.db.Exec("DELETE FROM pay_slips WHERE id = ?", id)
 	return err

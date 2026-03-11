@@ -77,28 +77,7 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 	}
 	userEmail := targetUser.Email
 
-	// Upsert check
-	existing, err := h.PaySlipService.GetPaySlipByUserMonthYear(req.UserID, req.Month, req.Year)
-	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
-		return
-	}
-
-	if existing != nil {
-		if err := h.PaySlipService.UpdatePaySlipFile(existing.ID, req.FilePath, currentUser.ID); err != nil {
-			http.Error(w, "Failed to update pay slip", http.StatusInternalServerError)
-			return
-		}
-		updated, err := h.PaySlipService.GetPaySlipByID(existing.ID)
-		if err != nil {
-			http.Error(w, "Failed to retrieve updated pay slip", http.StatusInternalServerError)
-			return
-		}
-
-		jsonResponse(w, http.StatusOK, updated)
-		return
-	}
-
+	// Atomic Upsert using the new service method
 	ps := &models.PaySlip{
 		UserID:     req.UserID,
 		UserEmail:  userEmail,
@@ -106,14 +85,15 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 		Year:       req.Year,
 		FilePath:   req.FilePath,
 		UploadedBy: currentUser.ID,
-		CreatedAt:  time.Now(),
 	}
-	if err := h.PaySlipService.InsertPaySlip(ps); err != nil {
+
+	result, err := h.PaySlipService.UpsertPaySlip(ps)
+	if err != nil {
 		http.Error(w, "Failed to save pay slip", http.StatusInternalServerError)
 		return
 	}
 
-	jsonResponse(w, http.StatusCreated, ps)
+	jsonResponse(w, http.StatusCreated, result)
 }
 
 // GetMyPaySlips handles GET /api/pay-slips - Returns only the caller's own pay slips

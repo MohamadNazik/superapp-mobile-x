@@ -115,3 +115,9 @@ func (db *Database) Close() error {
 	return db.Conn.Close()
 }
 
+func (db *Database) Begin() (*sql.Tx, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	return db.Conn.Begin()
+}
+
