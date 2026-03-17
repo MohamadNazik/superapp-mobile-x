@@ -1,3 +1,4 @@
+export type { ApiResponse } from './api/types';
 
 export enum UserRole {
   USER = 'USER',
@@ -94,8 +95,3 @@ export interface PublicHoliday {
   types: string[];
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}

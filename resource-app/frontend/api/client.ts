@@ -5,16 +5,18 @@ import { ApiResponse, Booking, BookingStatus, PublicHoliday, Resource, ResourceU
 
 const API_URL = APP_CONFIG.API_BASE_URL;
 
-const api = axios.create({
+const httpClient = axios.create({
     baseURL: API_URL,
 });
+
+export { httpClient };
 
 // Token management
 let activeToken: string | null = null;
 let isRefreshing = false;
 
 // Request interceptor to inject auth token
-api.interceptors.request.use(async (config) => {
+httpClient.interceptors.request.use(async (config) => {
     // If we don't have a token, get one
     if (!activeToken) {
         try {
@@ -56,7 +58,7 @@ api.interceptors.request.use(async (config) => {
 });
 
 // Response interceptor to handle 401s and errors
-api.interceptors.response.use(
+httpClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
@@ -76,7 +78,7 @@ api.interceptors.response.use(
                         }, 100);
                     });
                     originalRequest.headers['Authorization'] = `Bearer ${activeToken}`;
-                    return api(originalRequest);
+                    return httpClient(originalRequest);
                 } catch {
                     return Promise.reject(error);
                 }
@@ -92,7 +94,7 @@ api.interceptors.response.use(
                     activeToken = tokenData.token;
                     originalRequest.headers['Authorization'] = `Bearer ${activeToken}`;
                     isRefreshing = false;
-                    return api(originalRequest);
+                    return httpClient(originalRequest);
                 }
             } catch (refreshError) {
                 console.error('Failed to refresh token:', refreshError);
@@ -121,42 +123,42 @@ const handleResponse = async <T>(request: Promise<{ data: { data: T } }>): Promi
 
 export const client = {
     // --- Users ---
-    getUsers: () => handleResponse<User[]>(api.get('/users')),
+    getUsers: () => handleResponse<User[]>(httpClient.get('/users')),
 
     updateUserRole: (userId: string, role: UserRole) =>
-        handleResponse<void>(api.patch(`/users/${userId}/role`, { role })),
+        handleResponse<void>(httpClient.patch(`/users/${userId}/role`, { role })),
 
     // --- Resources ---
-    getResources: () => handleResponse<Resource[]>(api.get('/resources')),
+    getResources: () => handleResponse<Resource[]>(httpClient.get('/resources')),
 
     addResource: (resource: unknown) =>
-        handleResponse<Resource>(api.post('/resources', resource)),
+        handleResponse<Resource>(httpClient.post('/resources', resource)),
 
     updateResource: (resource: Resource) =>
-        handleResponse<Resource>(api.put(`/resources/${resource.id}`, resource)),
+        handleResponse<Resource>(httpClient.put(`/resources/${resource.id}`, resource)),
 
     deleteResource: (id: string) =>
-        handleResponse<boolean>(api.delete(`/resources/${id}`)),
+        handleResponse<boolean>(httpClient.delete(`/resources/${id}`)),
 
     // --- Bookings ---
-    getBookings: () => handleResponse<Booking[]>(api.get('/bookings')),
+    getBookings: () => handleResponse<Booking[]>(httpClient.get('/bookings')),
 
     createBooking: (data: unknown) =>
-        handleResponse<Booking>(api.post('/bookings', data)),
+        handleResponse<Booking>(httpClient.post('/bookings', data)),
 
     processBooking: (id: string, status: BookingStatus, rejectionReason?: string) =>
-        handleResponse<void>(api.post(`/bookings/${id}/process`, { status, rejectionReason })),
+        handleResponse<void>(httpClient.post(`/bookings/${id}/process`, { status, rejectionReason })),
 
     rescheduleBooking: (id: string, start: string, end: string) =>
-        handleResponse<void>(api.post(`/bookings/${id}/reschedule`, { start, end })),
+        handleResponse<void>(httpClient.post(`/bookings/${id}/reschedule`, { start, end })),
 
     cancelBooking: (id: string) =>
-        handleResponse<boolean>(api.delete(`/bookings/${id}`)),
+        handleResponse<boolean>(httpClient.delete(`/bookings/${id}`)),
 
     // --- Stats ---
-    getUtilizationStats: () => handleResponse<ResourceUsageStats[]>(api.get('/stats')),
+    getUtilizationStats: () => handleResponse<ResourceUsageStats[]>(httpClient.get('/stats')),
 
     // --- Holidays ---
-    getHolidays: () => handleResponse<PublicHoliday[]>(api.get('/holidays')),
+    getHolidays: () => handleResponse<PublicHoliday[]>(httpClient.get('/holidays')),
 };
 
