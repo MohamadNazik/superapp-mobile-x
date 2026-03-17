@@ -58,7 +58,7 @@ func HandleProcessBooking(svc *Service) gin.HandlerFunc {
 		id := c.Param("id")
 		var req struct {
 			Status          BookingStatus `json:"status" binding:"required"`
-			RejectionReason *string			`json:"rejectionReason"`
+			RejectionReason *string       `json:"rejectionReason"`
 		}
 		err := c.ShouldBindJSON(&req)
 		if err != nil {
