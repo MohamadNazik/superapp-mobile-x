@@ -7,11 +7,10 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-
 	"resource-app/internal/config"
-	"resource-app/internal/models"
 	"resource-app/internal/user"
 	"resource-app/internal/resource"
+	"resource-app/internal/booking"
 )
 
 // NewDatabase creates a new database connection
@@ -24,7 +23,7 @@ func NewDatabase(dsn string) (*gorm.DB, error) {
 	}
 
 	// Auto-migrate models
-	if err := db.AutoMigrate(&user.User{}, &resource.Resource{}, &models.Booking{}); err != nil {
+	if err := db.AutoMigrate(&user.User{}, &resource.Resource{}, &booking.Booking{}); err != nil {
 		return nil, err
 	}
 

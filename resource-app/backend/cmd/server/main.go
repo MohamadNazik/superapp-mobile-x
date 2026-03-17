@@ -18,6 +18,7 @@ import (
 	"resource-app/internal/store"
 	"resource-app/internal/user"
 	"resource-app/internal/resource"
+	"resource-app/internal/booking"
 )
 
 func main() {
@@ -65,9 +66,14 @@ func main() {
 
 	// Initialize resource repository
 	resourceRepo := resource.NewGormRepository(database)
-
 	// Initialize resource service
 	resourceService := resource.NewService(resourceRepo)
+
+	// Initialize booking repository
+	bookingRepo := booking.NewGormRepository(database)
+	// Initialize booking service
+	bookingService := booking.NewService(bookingRepo)
+
 
 	// Create Gin router
 	r := gin.Default()
@@ -104,11 +110,11 @@ func main() {
 	apiGroup.DELETE("/resources/:id", resource.HandleDeleteResource(resourceService))
 
 	// Bookings
-	apiGroup.GET("/bookings", api.HandleGetBookings(dbStore))
-	apiGroup.POST("/bookings", api.HandleCreateBooking(dbStore))
-	apiGroup.POST("/bookings/:id/process", api.HandleProcessBooking(dbStore))
-	apiGroup.POST("/bookings/:id/reschedule", api.HandleRescheduleBooking(dbStore))
-	apiGroup.DELETE("/bookings/:id", api.HandleCancelBooking(dbStore))
+	apiGroup.GET("/bookings", booking.HandleGetBookings(bookingService))
+	apiGroup.POST("/bookings", booking.HandleCreateBooking(bookingService))
+	apiGroup.POST("/bookings/:id/process", booking.HandleProcessBooking(bookingService))
+	apiGroup.POST("/bookings/:id/reschedule", booking.HandleRescheduleBooking(bookingService))
+	apiGroup.DELETE("/bookings/:id", booking.HandleCancelBooking(bookingService))
 
 	// Stats
 	apiGroup.GET("/stats", api.HandleGetStats(dbStore))
