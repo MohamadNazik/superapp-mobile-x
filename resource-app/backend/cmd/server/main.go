@@ -113,7 +113,7 @@ func main() {
 	apiGroup.DELETE("/bookings/:id", booking.HandleCancelBooking(bookingService))
 
 	// Stats
-	apiGroup.GET("/stats", api.HandleGetStats(resourceService))
+	apiGroup.GET("/stats", resource.HandleGetStats(resourceService))
 	// holidays
 	apiGroup.GET("/holidays", api.HandleGetHolidays())
 

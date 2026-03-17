@@ -2,6 +2,7 @@ package resource
 
 import (
 	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -62,5 +63,16 @@ func HandleDeleteResource(svc *Service) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"success": true, "data": true})
+	}
+}
+
+func HandleGetStats(svc *Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		stats, err := svc.GetUtilizationStats()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to calculate stats"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": stats})
 	}
 }

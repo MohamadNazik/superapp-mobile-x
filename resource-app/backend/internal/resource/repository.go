@@ -1,7 +1,7 @@
 package resource
 
 import (
-	"time"
+	"resource-app/internal/shared"
 
 	"gorm.io/gorm"
 )
@@ -49,33 +49,36 @@ func (r *GormRepository) GetResourceByID(id string) (*Resource, error) {
 	return &resource, result.Error
 }
 
+type utilizationRow struct {
+	ResourceID   string  `gorm:"column:resource_id"`
+	ResourceName string  `gorm:"column:resource_name"`
+	ResourceType string  `gorm:"column:resource_type"`
+	BookingCount int     `gorm:"column:booking_count"`
+	TotalHours   float64 `gorm:"column:total_hours"`
+}
+
 func (r *GormRepository) GetUtilizationStats() ([]ResourceUsageStats, error) {
-	resources, err := r.GetResources()
+	var rows []utilizationRow
+
+	err := r.db.Raw(`
+		SELECT
+			r.id   AS resource_id,
+			r.name AS resource_name,
+			r.type AS resource_type,
+			COUNT(b.id) AS booking_count,
+			COALESCE(SUM(TIMESTAMPDIFF(SECOND, b.start, b.end)), 0) / 3600 AS total_hours
+		FROM resources r
+		LEFT JOIN bookings b
+			ON b.resource_id = r.id AND b.status = ?
+		GROUP BY r.id, r.name, r.type
+	`, shared.StatusConfirmed).Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}
 
-	var stats []ResourceUsageStats
-
-	for _, res := range resources {
-		var bookings []struct {
-			Start time.Time
-			End   time.Time
-		}
-
-		if err := r.db.Table("bookings").
-			Select("start, end").
-			Where("resource_id = ? AND status = ?", res.ID, "confirmed").
-			Find(&bookings).Error; err != nil {
-			return nil, err
-		}
-
-		totalMs := int64(0)
-		for _, booking := range bookings {
-			totalMs += booking.End.Sub(booking.Start).Milliseconds()
-		}
-
-		totalHours := int(totalMs / (1000 * 60 * 60))
+	stats := make([]ResourceUsageStats, 0, len(rows))
+	for _, row := range rows {
+		totalHours := int(row.TotalHours)
 		utilizationRate := 0
 		if totalHours > 0 {
 			utilizationRate = int((float64(totalHours) / 160.0) * 100.0)
@@ -83,12 +86,11 @@ func (r *GormRepository) GetUtilizationStats() ([]ResourceUsageStats, error) {
 				utilizationRate = 100
 			}
 		}
-
 		stats = append(stats, ResourceUsageStats{
-			ResourceID:      res.ID,
-			ResourceName:    res.Name,
-			ResourceType:    res.Type,
-			BookingCount:    len(bookings),
+			ResourceID:      row.ResourceID,
+			ResourceName:    row.ResourceName,
+			ResourceType:    row.ResourceType,
+			BookingCount:    row.BookingCount,
 			TotalHours:      totalHours,
 			UtilizationRate: utilizationRate,
 		})

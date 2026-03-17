@@ -1,18 +1,22 @@
 package booking
 
-import "errors"
+import (
+	"errors"
 
-// BookingStatus represents the status of a booking
-type BookingStatus string
+	"resource-app/internal/shared"
+)
+
+// BookingStatus is an alias for shared.BookingStatus to avoid import cycles.
+type BookingStatus = shared.BookingStatus
 
 const (
-	StatusPending   BookingStatus = "pending"
-	StatusConfirmed BookingStatus = "confirmed"
-	StatusRejected  BookingStatus = "rejected"
-	StatusCancelled BookingStatus = "cancelled"
-	StatusCompleted BookingStatus = "completed"
-	StatusCheckedIn BookingStatus = "checked_in"
-	StatusProposed  BookingStatus = "proposed"
+	StatusPending   = shared.StatusPending
+	StatusConfirmed = shared.StatusConfirmed
+	StatusRejected  = shared.StatusRejected
+	StatusCancelled = shared.StatusCancelled
+	StatusCompleted = shared.StatusCompleted
+	StatusCheckedIn = shared.StatusCheckedIn
+	StatusProposed  = shared.StatusProposed
 )
 
 var (
