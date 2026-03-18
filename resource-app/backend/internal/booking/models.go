@@ -17,3 +17,13 @@ type Booking struct {
 	RejectionReason *string         `json:"rejectionReason,omitempty" gorm:"type:text"`
 	Details         json.RawMessage `json:"details" gorm:"type:json"` // Stored as JSON
 }
+
+//Stats
+type ResourceUsageStats struct {
+	ResourceID      string `json:"resourceId"`
+	ResourceName    string `json:"resourceName"`
+	ResourceType    string `json:"resourceType"`
+	BookingCount    int    `json:"bookingCount"`
+	TotalHours      int    `json:"totalHours"`
+	UtilizationRate int    `json:"utilizationRate"`
+}

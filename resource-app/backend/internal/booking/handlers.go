@@ -127,3 +127,15 @@ func HandleCancelBooking(svc *Service) gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"success": true, "data": true})
 	}
 }
+
+func HandleGetStats(svc *Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		stats, err := svc.GetUtilizationStats()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to calculate stats"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": stats})
+	}
+}
+

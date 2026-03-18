@@ -19,12 +19,3 @@ type Resource struct {
 	CreatedAt        time.Time       `json:"createdAt" gorm:"autoCreateTime"`
 }
 
-//Stats
-type ResourceUsageStats struct {
-	ResourceID      string `json:"resourceId"`
-	ResourceName    string `json:"resourceName"`
-	ResourceType    string `json:"resourceType"`
-	BookingCount    int    `json:"bookingCount"`
-	TotalHours      int    `json:"totalHours"`
-	UtilizationRate int    `json:"utilizationRate"`
-}
