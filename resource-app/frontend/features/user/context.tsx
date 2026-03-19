@@ -49,9 +49,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else {
         throw new Error(response.error || "Failed to fetch users");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("UserProvider error:", err);
-      setError(err.message || "Failed to initialize user context");
+      setError(err instanceof Error ? err.message : "Failed to initialize user context");
     } finally {
       setIsLoading(false);
     }
@@ -62,11 +62,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [fetchUsers]);
 
   const updateUserRole = async (userId: string, role: UserRole) => {
-    const res = await userApi.updateUserRole(userId, role);
-    if (res.success) {
-      await fetchUsers();
-    } else {
-      throw new Error(res.error || "Failed to update user role");
+    try {
+      const res = await userApi.updateUserRole(userId, role);
+      if (res.success) {
+        await fetchUsers();
+      } else {
+        setError(res.error || "Failed to update user role");
+      }
+    } catch (err: unknown) {
+      console.error("updateUserRole error:", err);
+      setError(err instanceof Error ? err.message : "An unexpected error occurred while updating user role");
     }
   };
 

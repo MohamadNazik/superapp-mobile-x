@@ -222,8 +222,11 @@ export const AdminView = () => {
                       isLoading={updatingUserId === user.id}
                       onClick={async () => {
                         setUpdatingUserId(user.id);
-                        await updateUserRole(user.id, UserRole.ADMIN);
-                        setUpdatingUserId(null);
+                        try {
+                          await updateUserRole(user.id, UserRole.ADMIN);
+                        } finally {
+                          setUpdatingUserId(null);
+                        }
                       }}
                     >
                       Make Admin
@@ -237,8 +240,11 @@ export const AdminView = () => {
                       isLoading={updatingUserId === user.id}
                       onClick={async () => {
                         setUpdatingUserId(user.id);
-                        await updateUserRole(user.id, UserRole.USER);
-                        setUpdatingUserId(null);
+                        try {
+                          await updateUserRole(user.id, UserRole.USER);
+                        } finally {
+                          setUpdatingUserId(null);
+                        }
                       }}
                       title={isSelf ? "Cannot revoke your own access" : "Revoke Admin Access"}
                     >
