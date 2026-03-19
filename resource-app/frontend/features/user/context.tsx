@@ -61,7 +61,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     fetchUsers();
   }, [fetchUsers]);
 
-  const updateUserRole = async (userId: string, role: UserRole) => {
+  const updateUserRole = useCallback(async (userId: string, role: UserRole) => {
     try {
       const res = await userApi.updateUserRole(userId, role);
       if (res.success) {
@@ -73,14 +73,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error("updateUserRole error:", err);
       setError(err instanceof Error ? err.message : "An unexpected error occurred while updating user role");
     }
-  };
+  }, [fetchUsers]);
 
-  const switchUser = (userId: string) => {
+  const switchUser = useCallback((userId: string) => {
     const user = allUsers.find(u => u.id === userId);
     if (user) {
       setCurrentUser(user);
     }
-  };
+  }, [allUsers]);
 
   return (
     <UserContext.Provider value={{

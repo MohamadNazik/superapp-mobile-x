@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { Resource, Booking, ApiResponse, ResourceUsageStats, BookingStatus } from '../types';
 import { client as api } from '../api/client';
 
@@ -31,7 +31,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setError(null);
     try {
       const [resRes, bookRes] = await Promise.all([
@@ -50,71 +50,71 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     const statsRes = await api.getUtilizationStats();
     if (statsRes.success && statsRes.data) setStats(statsRes.data);
-  };
+  }, []);
 
-  const createBooking = async (data: Record<string, unknown>) => {
+  const createBooking = useCallback(async (data: Record<string, unknown>) => {
     const res = await api.createBooking(data);
     if (res.success) await fetchData();
     return res;
-  };
+  }, [fetchData]);
 
-  const cancelBooking = async (id: string) => {
+  const cancelBooking = useCallback(async (id: string) => {
     await api.cancelBooking(id);
     await fetchData();
-  };
+  }, [fetchData]);
 
-  const dismissBooking = async (id: string) => {
+  const dismissBooking = useCallback(async (id: string) => {
     // Dismissing a rejection or proposal effectively removes it
     await api.cancelBooking(id);
     await fetchData();
-  };
+  }, [fetchData]);
 
-  const processBooking = async (id: string, status: BookingStatus, reason?: string) => {
+  const processBooking = useCallback(async (id: string, status: BookingStatus, reason?: string) => {
     await api.processBooking(id, status, reason);
     await fetchData();
-  };
+  }, [fetchData]);
 
-  const rescheduleBooking = async (id: string, start: string, end: string) => {
+  const rescheduleBooking = useCallback(async (id: string, start: string, end: string) => {
     const res = await api.rescheduleBooking(id, start, end);
     if (res.success) await fetchData();
     return res;
-  };
+  }, [fetchData]);
 
-  const addResource = async (resourceData: Omit<Resource, 'id'>) => {
+  const addResource = useCallback(async (resourceData: Omit<Resource, 'id'>) => {
     const res = await api.addResource(resourceData);
     if (res.success && res.data) {
-      setResources([...resources, res.data]);
+      setResources(prev => [...prev, res.data!]);
       return true;
     }
     return false;
-  };
+  }, []);
 
-  const updateResource = async (resourceData: Resource) => {
+  const updateResource = useCallback(async (resourceData: Resource) => {
     const res = await api.updateResource(resourceData);
     if (res.success && res.data) {
-      setResources(resources.map(r => r.id === resourceData.id ? res.data! : r));
+      setResources(prev => prev.map(r => r.id === resourceData.id ? res.data! : r));
       return true;
     }
     return false;
-  };
+  }, []);
 
-  const deleteResource = async (id: string) => {
+  const deleteResource = useCallback(async (id: string) => {
     const res = await api.deleteResource(id);
     if (res.success) {
-      setResources(resources.filter(r => r.id !== id));
+      setResources(prev => prev.filter(r => r.id !== id));
       return true;
     }
     return false;
-  };
+  }, []);
 
   return (
     <AppContext.Provider value={{
