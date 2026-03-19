@@ -2,7 +2,7 @@ package booking
 
 import "errors"
 
-// BookingStatus represents the status of a booking
+// BookingStatus represents the status of a booking.
 type BookingStatus string
 
 const (

@@ -13,12 +13,11 @@ import (
 
 	"resource-app/internal/api"
 	"resource-app/internal/auth"
+	"resource-app/internal/booking"
 	"resource-app/internal/config"
 	"resource-app/internal/db"
-	"resource-app/internal/store"
-	"resource-app/internal/user"
 	"resource-app/internal/resource"
-	"resource-app/internal/booking"
+	"resource-app/internal/user"
 )
 
 func main() {
@@ -56,9 +55,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-
-	// Initialize store
-	dbStore := store.NewDBStore(database)
 
 	// Initialize user service
 	userRepo := user.NewGormUserRepository(database)
@@ -117,7 +113,7 @@ func main() {
 	apiGroup.DELETE("/bookings/:id", booking.HandleCancelBooking(bookingService))
 
 	// Stats
-	apiGroup.GET("/stats", api.HandleGetStats(dbStore))
+	apiGroup.GET("/stats", booking.HandleGetStats(bookingService))
 	// holidays
 	apiGroup.GET("/holidays", api.HandleGetHolidays())
 

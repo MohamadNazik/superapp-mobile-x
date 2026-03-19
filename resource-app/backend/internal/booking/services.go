@@ -45,3 +45,7 @@ func (s *Service) RescheduleBooking(id string, newStart, newEnd time.Time) (*Boo
 func (s *Service) CancelBooking(id string) error {
 	return s.repo.CancelBooking(id)
 }
+
+func (s *Service) GetUtilizationStats() ([]ResourceUsageStats, error) {
+	return s.repo.GetUtilizationStats()
+}

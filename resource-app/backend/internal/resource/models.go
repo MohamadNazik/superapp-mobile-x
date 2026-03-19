@@ -18,3 +18,4 @@ type Resource struct {
 	FormFields       json.RawMessage `json:"formFields" gorm:"type:json"` // Stored as JSON
 	CreatedAt        time.Time       `json:"createdAt" gorm:"autoCreateTime"`
 }
+
