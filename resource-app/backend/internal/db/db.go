@@ -26,7 +26,7 @@ func NewDatabase(dsn string) (*gorm.DB, error) {
 	}
 
 	// Auto-migrate models
-	if err := db.AutoMigrate(&user.User{}, &resource.Resource{}, &booking.Booking{}, &group.Group{}, &group.UserGroup{}); err != nil {
+	if err := db.AutoMigrate(&user.User{}, &resource.Resource{}, &booking.Booking{}, &group.Group{}, &group.UserGroup{}, &permission.ResourcePermission{}); err != nil {
 		return nil, err
 	}
 

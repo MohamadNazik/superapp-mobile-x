@@ -17,6 +17,7 @@ import (
 	"resource-app/internal/config"
 	"resource-app/internal/db"
 	"resource-app/internal/group"
+	"resource-app/internal/permission"
 	"resource-app/internal/resource"
 	"resource-app/internal/user"
 )
@@ -76,6 +77,11 @@ func main() {
 	// Initialize group service
 	groupService := group.NewService(groupRepo)
 
+	// Initialize permission repository
+	permissionRepo := permission.NewGormRepository(database)
+	// Initialize permission service
+	permissionService := permission.NewService(permissionRepo)
+
 
 	// Create Gin router
 	r := gin.Default()
@@ -114,6 +120,13 @@ func main() {
 	apiGroup.GET("/groups/:id/users", group.HandleGetGroupMembers(groupService))
 	apiGroup.POST("/groups/:id/users", group.HandleAddUsersToGroup(groupService))
 	apiGroup.DELETE("/groups/:id/users/:userId", group.HandleRemoveUserFromGroup(groupService))
+	// Group permissions
+	apiGroup.POST("/resource-permissions", permission.HandleCreatePermission(permissionService))
+	apiGroup.PATCH("/resource-permissions/:id", permission.HandleUpdatePermissionType(permissionService))
+	apiGroup.DELETE("/resource-permissions/:id", permission.HandleDeletePermission(permissionService))
+	apiGroup.GET("/groups/:id/permissions", permission.HandleGetGroupPermissions(permissionService))
+
+
 
 	// Resources
 	apiGroup.GET("/resources", resource.HandleGetResources(resourceService))
