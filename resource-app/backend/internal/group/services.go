@@ -6,6 +6,10 @@ type AddedUserResult struct {
 	UserID string `json:"user_id"`
 }
 
+type AddUsersToGroupRequest struct {
+	UserIDs []string `json:"user_ids" binding:"required,min=1,dive,required"`
+}
+
 type AddUsersToGroupResult struct {
 	GroupID    string            `json:"group_id"`
 	AddedUsers []AddedUserResult `json:"added_users"`

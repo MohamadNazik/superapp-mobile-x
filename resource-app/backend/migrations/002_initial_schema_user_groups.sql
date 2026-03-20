@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS user_groups (
 
     INDEX idx_user_groups_user (user_id),
     INDEX idx_user_groups_group (group_id),
+    UNIQUE KEY uk_user_group (user_id, group_id),
 
     CONSTRAINT fk_user_groups_user
         FOREIGN KEY (user_id)

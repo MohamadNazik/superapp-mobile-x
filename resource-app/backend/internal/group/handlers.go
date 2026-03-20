@@ -28,12 +28,6 @@ func HandleCreateGroup(svc *Service) gin.HandlerFunc {
             return
         }
 		c.JSON(http.StatusCreated, gin.H{"success": true, "data": group})
-		 if err := svc.CreateGroup(&group); err != nil {
-            log.Printf("error creating group: %v", err)
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create group"})
-            return
-        }
-		c.JSON(http.StatusCreated, gin.H{"success": true, "data": group})
 	}
 }
 
@@ -51,7 +45,11 @@ func HandleGetGroups(svc *Service) gin.HandlerFunc {
 
 func HandleUpdateGroup(svc *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		groupID := c.Param("id")
+		if _, err := uuid.Parse(groupID); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid group ID"})
+			return
+		}
 
 		var payload CreateAndUpdateGroupPayload
 		if err := c.ShouldBindJSON(&payload); err != nil {
@@ -60,7 +58,7 @@ func HandleUpdateGroup(svc *Service) gin.HandlerFunc {
 		}
 
 		group := Group{
-			ID:          id,
+			ID:          groupID,
 			Name:        payload.Name,
 			Description: payload.Description,
 		}
@@ -81,8 +79,13 @@ func HandleUpdateGroup(svc *Service) gin.HandlerFunc {
 
 func HandleDeleteGroup(svc *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
-		err := svc.DeleteGroup(id)
+		groupID := c.Param("id")
+		if _, err := uuid.Parse(groupID); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid group ID"})
+			return
+		}
+
+		err := svc.DeleteGroup(groupID)
 		if err != nil {
 			switch {
 			case errors.Is(err, ErrGroupNotFound):
@@ -101,13 +104,11 @@ func HandleAddUsersToGroup(svc *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		groupID := c.Param("id")
 		if _, err := uuid.Parse(groupID); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid groupId"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid group ID"})
 			return
 		}
 
-		var req struct {
-			UserIDs []string `json:"user_ids" binding:"required,min=1,dive,required"`
-		}
+		var req AddUsersToGroupRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -115,7 +116,7 @@ func HandleAddUsersToGroup(svc *Service) gin.HandlerFunc {
 
 		for _, userID := range req.UserIDs {
 			if _, err := uuid.Parse(userID); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_ids"})
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user IDs"})
 				return
 			}
 		}
@@ -128,7 +129,7 @@ func HandleAddUsersToGroup(svc *Service) gin.HandlerFunc {
 			case errors.Is(err, ErrGroupNotFound), errors.Is(err, ErrUserNotFound):
 				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add users to group: " + err.Error()})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add users to group: "})
 			}
 			return
 		}
@@ -141,13 +142,13 @@ func HandleRemoveUserFromGroup(svc *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		groupID := c.Param("id")
 		if _, err := uuid.Parse(groupID); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid groupId"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid group ID"})
 			return
 		}
 
 		userID := c.Param("userId")
 		if _, err := uuid.Parse(userID); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid userId"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
 			return
 		}
 
@@ -170,7 +171,7 @@ func HandleGetGroupMembers(svc *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		groupID := c.Param("id")
 		if _, err := uuid.Parse(groupID); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid group ID"})
 			return
 		}
 
