@@ -119,7 +119,15 @@ export const CreateResourceView = ({ onClose, initialData }: CreateResourceViewP
           <div>
             <Label>Color Theme</Label>
             <div className="flex gap-3">
-              {COLOR_OPTIONS.map(color => (
+              {(() => {
+                const colorBgMap: Record<string, string> = {
+                  blue: 'bg-blue-500',
+                  emerald: 'bg-emerald-500',
+                  violet: 'bg-violet-500',
+                  amber: 'bg-amber-500',
+                  red: 'bg-red-500',
+                };
+                return COLOR_OPTIONS.map(color => (
                 <button
                   key={color}
                   onClick={() => setBasicInfo({ ...basicInfo, color })}
@@ -129,15 +137,10 @@ export const CreateResourceView = ({ onClose, initialData }: CreateResourceViewP
                   )}
                   style={{ backgroundColor: `var(--color-${color}-500)` }}
                 >
-                  <div className={cn("w-full h-full rounded-full",
-                    color === 'blue' ? 'bg-blue-500' :
-                      color === 'emerald' ? 'bg-emerald-500' :
-                        color === 'violet' ? 'bg-violet-500' :
-                          color === 'amber' ? 'bg-amber-500' :
-                            color === 'red' ? 'bg-red-500' : 'bg-slate-500'
-                  )} />
+                  <div className={cn("w-full h-full rounded-full", colorBgMap[color] || 'bg-slate-500')} />
                 </button>
-              ))}
+              ));
+              })()}
             </div>
           </div>
         </section>

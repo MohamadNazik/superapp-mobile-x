@@ -72,10 +72,12 @@ export const CatalogView = ({ onSelect }: { onSelect: (r: Resource) => void }) =
         ) : (
           filtered.map(res => {
             const available = isAvailable(res.id);
-            const colorClass = res.color === 'blue' ? 'bg-blue-50 text-blue-600' : 
-                             res.color === 'violet' ? 'bg-violet-50 text-violet-600' : 
-                             res.color === 'emerald' ? 'bg-emerald-50 text-emerald-600' : 
-                             'bg-slate-100 text-slate-600';
+            const colorMap: Record<string, string> = {
+              'blue': 'bg-blue-50 text-blue-600',
+              'violet': 'bg-violet-50 text-violet-600',
+              'emerald': 'bg-emerald-50 text-emerald-600',
+            };
+            const colorClass = colorMap[res.color || ''] || 'bg-slate-100 text-slate-600';
 
             return (
               <div 

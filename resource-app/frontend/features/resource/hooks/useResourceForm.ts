@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useResource } from '../context';
 import { Resource, ResourceType, FormField, RESOURCE_TYPES } from '../types';
 import { APP_CONFIG } from '../../../config';
@@ -6,6 +6,7 @@ import { APP_CONFIG } from '../../../config';
 export const useResourceForm = (onClose: () => void, initialData?: Resource) => {
   const { addResource, updateResource } = useResource();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fieldIdCounter = useRef(0);
 
   // --- Form State ---
   const [basicInfo, setBasicInfo] = useState({
@@ -53,8 +54,8 @@ export const useResourceForm = (onClose: () => void, initialData?: Resource) => 
   };
 
   const handleAddField = () => {
-    setFormFields([...formFields, {
-      id: `field_${Date.now()}`,
+    setFormFields(prevFields => [...prevFields, {
+      id: `field_${fieldIdCounter.current++}`,
       label: '',
       type: 'text',
       required: false
@@ -100,7 +101,7 @@ export const useResourceForm = (onClose: () => void, initialData?: Resource) => 
     if (initialData) {
       success = await updateResource({ ...resourceData, id: initialData.id, isActive: initialData.isActive });
     } else {
-      success = await addResource(resourceData);
+      success = await addResource({ ...resourceData, isActive: true });
     }
 
     setIsSubmitting(false);
