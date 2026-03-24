@@ -2,6 +2,11 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { Resource, ResourceUsageStats } from './types';
 import { resourceApi } from './api';
 
+export interface MutationResult {
+  success: boolean;
+  error?: string;
+}
+
 interface ResourceContextType {
   resources: Resource[];
   stats: ResourceUsageStats[];
@@ -9,8 +14,8 @@ interface ResourceContextType {
   error: string | null;
   refreshResources: () => Promise<void>;
   fetchStats: () => Promise<void>;
-  addResource: (data: Omit<Resource, 'id'>) => Promise<boolean>;
-  updateResource: (data: Resource) => Promise<boolean>;
+  addResource: (data: Omit<Resource, 'id'>) => Promise<MutationResult>;
+  updateResource: (data: Resource) => Promise<MutationResult>;
   deleteResource: (id: string) => Promise<void>;
 }
 
@@ -59,18 +64,18 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
     const res = await resourceApi.addResource(data);
     if (res.success && res.data) {
       setResources(prev => [...prev, res.data!]);
-      return true;
+      return { success: true };
     }
-    return false;
+    return { success: false, error: res.error || 'Failed to add resource' };
   }, []);
 
   const updateResource = useCallback(async (data: Resource) => {
     const res = await resourceApi.updateResource(data);
     if (res.success && res.data) {
       setResources(prev => prev.map(r => r.id === data.id ? res.data! : r));
-      return true;
+      return { success: true };
     }
-    return false;
+    return { success: false, error: res.error || 'Failed to update resource' };
   }, []);
 
   const deleteResource = useCallback(async (id: string) => {

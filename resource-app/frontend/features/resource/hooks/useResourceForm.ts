@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useResource } from '../context';
 import { Resource, ResourceType, FormField, RESOURCE_TYPES } from '../types';
 import { APP_CONFIG } from '../../../config';
@@ -6,7 +6,7 @@ import { APP_CONFIG } from '../../../config';
 export const useResourceForm = (onClose: () => void, initialData?: Resource) => {
   const { addResource, updateResource } = useResource();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const fieldIdCounter = useRef(0);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // --- Form State ---
   const [basicInfo, setBasicInfo] = useState({
@@ -55,7 +55,7 @@ export const useResourceForm = (onClose: () => void, initialData?: Resource) => 
 
   const handleAddField = () => {
     setFormFields(prevFields => [...prevFields, {
-      id: `field_${fieldIdCounter.current++}`,
+      id: crypto.randomUUID(),
       label: '',
       type: 'text',
       required: false
@@ -81,6 +81,7 @@ export const useResourceForm = (onClose: () => void, initialData?: Resource) => 
     if (!basicInfo.name || !basicInfo.description) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
 
     // Convert specs array to record
     const specsRecord: Record<string, string> = {};
@@ -97,19 +98,21 @@ export const useResourceForm = (onClose: () => void, initialData?: Resource) => 
       formFields: formFields.filter(f => f.label) // Filter empty
     };
 
-    let success = false;
-    if (initialData) {
-      success = await updateResource({ ...resourceData, id: initialData.id, isActive: initialData.isActive });
-    } else {
-      success = await addResource({ ...resourceData, isActive: true });
-    }
+    const result = initialData
+      ? await updateResource({ ...resourceData, id: initialData.id, isActive: initialData.isActive })
+      : await addResource({ ...resourceData, isActive: true });
 
     setIsSubmitting(false);
-    if (success) onClose();
+    if (result.success) {
+      onClose();
+    } else {
+      setSubmitError(result.error || 'An unexpected error occurred.');
+    }
   };
 
   return {
     isSubmitting,
+    submitError,
     basicInfo,
     setBasicInfo,
     specs,

@@ -14,6 +14,7 @@ interface CreateResourceViewProps {
 export const CreateResourceView = ({ onClose, initialData }: CreateResourceViewProps) => {
   const {
     isSubmitting,
+    submitError,
     basicInfo, setBasicInfo,
     specs, formFields,
     handlers
@@ -251,6 +252,11 @@ export const CreateResourceView = ({ onClose, initialData }: CreateResourceViewP
 
       {/* Footer */}
       <div className="p-4 bg-white border-t border-slate-200 shrink-0 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
+        {submitError && (
+          <div className="mb-3 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 flex items-center gap-2">
+            <span className="font-semibold">Error:</span> {submitError}
+          </div>
+        )}
         <Button
           className="w-full h-12 text-base shadow-lg shadow-primary-500/20"
           onClick={handlers.handleSubmit}
