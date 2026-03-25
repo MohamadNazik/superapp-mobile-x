@@ -5,6 +5,8 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, AlertCircle, Check
 import { cn } from '../../../utils/cn';
 import { Card, EmptyState, Button, Badge } from '../../../components/UI';
 import { BookingStatus } from '../../booking/types';
+import { useUser } from '../../user';
+import { UserRole } from '../../../types';
 import { useCalendar } from '../hooks/useCalendar';
 import { DynamicIcon } from '../../../components/Icons';
 import { useBookingContext } from '../../booking/context';
@@ -15,13 +17,14 @@ export const CalendarView = () => {
     viewMode, setViewMode,
     changeMonth, goToToday,
     daysInMonth, paddingDays,
-    isAdmin, currentUser,
     selectedDayEvents, selectedDayHoliday, dayEvents,
     getHolidayForDate,
     getResourceDetails, getUserDetails
   } = useCalendar();
 
   const { bookings, processBooking, dismissBooking } = useBookingContext();
+  const { currentUser } = useUser();
+  const isAdmin = currentUser?.role === UserRole.ADMIN;
 
   // Filter Actionable Items (Proposed or Rejected for current user)
   const actionableBookings = React.useMemo(() => bookings.filter(b =>
