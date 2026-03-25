@@ -6,7 +6,7 @@ import { BookingProvider, useBookingContext } from './features/booking/context';
 import { UserRole, Resource } from './types';
 
 // Views
-import { CalendarView } from './views/CalendarView';
+import { CalendarView } from './features/calendar/views/CalendarView';
 import { CatalogView } from './features/resource/views/CatalogView';
 import { AdminView } from './features/user/views/AdminView';
 import { BookingView } from './features/booking/views/BookingView';
