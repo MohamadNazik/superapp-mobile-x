@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useUser, UserProvider } from './features/user';
 import { ResourceProvider, useResource } from './features/resource/context';
 import { BookingProvider, useBookingContext } from './features/booking/context';
-import { GroupProvider } from './features/group/context';
 import { UserRole } from './features/user/types';
 import { Resource } from './features/resource/types';
 
@@ -92,10 +91,8 @@ const App = () => (
   <UserProvider>
     <HolidayProvider>
       <ResourceProvider>
-        <BookingProvider>
-          <GroupProvider>
+        <BookingProvider> 
             <AppContent />
-          </GroupProvider>
         </BookingProvider>
       </ResourceProvider>
     </HolidayProvider>

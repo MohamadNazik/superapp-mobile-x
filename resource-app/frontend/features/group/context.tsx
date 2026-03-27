@@ -32,6 +32,7 @@ export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const createGroup = useCallback(async (payload: CreateAndUpdateGroupPayload) => {
+    setError(null);
     const response = await groupApi.createGroup(payload);
     if (response.success && response.data) {
       setGroups(prev => [...prev, response.data!]);
@@ -42,6 +43,7 @@ export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const updateGroup = useCallback(async (id: string, payload: CreateAndUpdateGroupPayload) => {
+    setError(null);
     const response = await groupApi.updateGroup(id, payload);
     if (response.success && response.data) {
       setGroups(prev => prev.map(g => (g.id === id ? response.data! : g)));
@@ -52,6 +54,7 @@ export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const deleteGroup = useCallback(async (id: string) => {
+    setError(null);
     const response = await groupApi.deleteGroup(id);
     if (response.success) {
       setGroups(prev => prev.filter(g => g.id !== id));
