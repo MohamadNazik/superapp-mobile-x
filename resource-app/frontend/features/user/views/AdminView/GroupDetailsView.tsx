@@ -111,8 +111,9 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
   };
 
   // Filter all users excluding those already members
+  const memberIds = useMemo(() => new Set(members.map(m => m.id)), [members]);
+
   const availableUsers = useMemo(() => {
-    const memberIds = new Set(members.map(m => m.id));
     const query = addUserSearch.toLowerCase();
     return allUsers
       .filter(u => !memberIds.has(u.id))
@@ -120,7 +121,7 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
         u.email.toLowerCase().includes(query) ||
         (u.department || '').toLowerCase().includes(query)
       );
-  }, [allUsers, members, addUserSearch]);
+  }, [allUsers, memberIds, addUserSearch]);
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col animate-in fade-in duration-200">

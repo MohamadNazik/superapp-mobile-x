@@ -64,18 +64,20 @@ export const GroupsTab = ({ onActiveFullScreen }: { onActiveFullScreen: (active:
 
       </div>
 
-      <div className="fixed bottom-24 left-0 right-0 max-w-md mx-auto pointer-events-none flex justify-end px-4 z-50">
-        <button
-          className="w-14 h-14 bg-primary-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary-700 active:scale-95 transition-all pointer-events-auto"
-          onClick={() => {
-            setIsCreating(true);
-            onActiveFullScreen(true);
-          }}
-          title="Create New Group"
-        >
-          <Plus size={24} />
-        </button>
-      </div>
+      {!isCreating && !latestGroup && (
+        <div className="fixed bottom-24 left-0 right-0 max-w-md mx-auto pointer-events-none flex justify-end px-4 z-50">
+          <button
+            className="w-14 h-14 bg-primary-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary-700 active:scale-95 transition-all pointer-events-auto"
+            onClick={() => {
+              setIsCreating(true);
+              onActiveFullScreen(true);
+            }}
+            title="Create New Group"
+          >
+            <Plus size={24} />
+          </button>
+        </div>
+      )}
     </>
   );
 };
