@@ -4,9 +4,9 @@ import "time"
 
 type ResourcePermission struct {
 	ID             string         `json:"id" gorm:"primaryKey;type:varchar(36)"`
-	ResourceID     string         `json:"resourceId" gorm:"column:resource_id;type:varchar(36);not null;index"`
-	GroupID        string         `json:"groupId" gorm:"column:group_id;type:varchar(36);not null;index"`
-	PermissionType PermissionType `json:"permissionType" gorm:"column:permission_type;type:varchar(20);not null"`
+	ResourceID     string         `json:"resourceId" gorm:"type:varchar(36);not null;index"`
+	GroupID        string         `json:"groupId" gorm:"type:varchar(36);not null;index"`
+	PermissionType PermissionType `json:"permissionType" gorm:"type:varchar(20);not null"`
 	CreatedAt      time.Time      `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt      time.Time      `json:"updatedAt" gorm:"autoUpdateTime"`
 }
@@ -27,7 +27,7 @@ type UpdatePermissionTypeRequest struct {
 
 type GroupPermissionResult struct {
 	ID             string         `json:"id"`
-	ResourceID     string         `json:"resourceId" gorm:"column:resource_id"`
-	ResourceName   string         `json:"resourceName" gorm:"column:resource_name"`
-	PermissionType PermissionType `json:"permissionType" gorm:"column:permission_type"`
+	ResourceID     string         `json:"resourceId"`
+	ResourceName   string         `json:"resourceName"`
+	PermissionType PermissionType `json:"permissionType"`
 }
