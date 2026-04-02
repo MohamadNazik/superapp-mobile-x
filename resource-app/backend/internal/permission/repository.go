@@ -1,6 +1,7 @@
 package permission
 
 import (
+	"context"
 	"strings"
 
 	mysqlDriver "github.com/go-sql-driver/mysql"
@@ -12,6 +13,7 @@ type Repository interface {
 	UpdatePermissionType(id string, permissionType PermissionType) (*ResourcePermission, error)
 	DeletePermission(id string) error
 	GetPermissionsByGroupID(groupID string) ([]GroupPermissionResult, error)
+	GetPermissionsByResourceID(ctx context.Context, resourceID string) ([]ResourcePermissionResult, error)
 	HasUserPermissionForResource(userID, resourceID string, permissionType PermissionType) (bool, error)
 }
 
@@ -106,6 +108,32 @@ func (r *GormRepository) GetPermissionsByGroupID(groupID string) ([]GroupPermiss
 		Scan(&permissions).Error
 	if err != nil {
 		return nil, err
+	}
+
+	return permissions, nil
+}
+
+func (r *GormRepository) GetPermissionsByResourceID(ctx context.Context, resourceID string) ([]ResourcePermissionResult, error) {
+	var permissions []ResourcePermissionResult
+	err := r.db.WithContext(ctx).
+		Table("resource_permissions AS rp").
+		Select("rp.id, rp.group_id, g.name AS group_name, rp.permission_type").
+		Joins("JOIN `groups` AS g ON g.id = rp.group_id").
+		Where("rp.resource_id = ?", resourceID).
+		Order("g.name ASC, rp.permission_type ASC").
+		Scan(&permissions).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if len(permissions) == 0 {
+		var resourceCount int64
+		if err := r.db.WithContext(ctx).Table("resources").Where("id = ?", resourceID).Count(&resourceCount).Error; err != nil {
+			return nil, err
+		}
+		if resourceCount == 0 {
+			return nil, ErrResourceNotFound
+		}
 	}
 
 	return permissions, nil

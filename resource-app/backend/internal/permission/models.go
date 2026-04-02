@@ -31,3 +31,10 @@ type GroupPermissionResult struct {
 	ResourceName   string         `json:"resourceName"`
 	PermissionType PermissionType `json:"permissionType"`
 }
+
+type ResourcePermissionResult struct {
+	ID             string         `json:"id"`
+	GroupID        string         `json:"groupId"`
+	GroupName      string         `json:"groupName"`
+	PermissionType PermissionType `json:"permissionType"`
+}

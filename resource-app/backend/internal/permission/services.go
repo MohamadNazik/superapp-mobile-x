@@ -1,6 +1,9 @@
 package permission
 
-import "github.com/google/uuid"
+import (
+	"context"
+	"github.com/google/uuid"
+)
 
 type Service struct {
 	repo Repository
@@ -33,6 +36,10 @@ func (s *Service) DeletePermission(id string) error {
 
 func (s *Service) GetPermissionsByGroupID(groupID string) ([]GroupPermissionResult, error) {
 	return s.repo.GetPermissionsByGroupID(groupID)
+}
+
+func (s *Service) GetPermissionsByResourceID(ctx context.Context, resourceID string) ([]ResourcePermissionResult, error) {
+	return s.repo.GetPermissionsByResourceID(ctx, resourceID)
 }
 
 func (s *Service) HasRequestPermission(userID, resourceID string) (bool, error) {
