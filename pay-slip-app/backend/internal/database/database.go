@@ -15,7 +15,7 @@ import (
 
 type Database struct {
 	Conn *sql.DB
-	mu   sync.Mutex
+	mu   sync.RWMutex
 }
 
 // NewDatabase creates a new database connection with pool tuning and a background health pinger.
@@ -86,32 +86,44 @@ func NewDatabase(cfg configs.DBConfig) (*Database, error) {
 // ── Database Methods ───────────────────────────────────────────────────────
 
 func (db *Database) Exec(query string, args ...any) (sql.Result, error) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	return db.Conn.Exec(query, args...)
+	db.mu.RLock()
+	conn := db.Conn
+	db.mu.RUnlock()
+	return conn.Exec(query, args...)
 }
 
 func (db *Database) Query(query string, args ...any) (*sql.Rows, error) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	return db.Conn.Query(query, args...)
+	db.mu.RLock()
+	conn := db.Conn
+	db.mu.RUnlock()
+	return conn.Query(query, args...)
 }
 
 func (db *Database) QueryRow(query string, args ...any) *sql.Row {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	return db.Conn.QueryRow(query, args...)
+	db.mu.RLock()
+	conn := db.Conn
+	db.mu.RUnlock()
+	return conn.QueryRow(query, args...)
 }
 
 func (db *Database) Ping() error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	return db.Conn.Ping()
+	db.mu.RLock()
+	conn := db.Conn
+	db.mu.RUnlock()
+	return conn.Ping()
 }
 
 func (db *Database) Close() error {
 	db.mu.Lock()
-	defer db.mu.Unlock()
-	return db.Conn.Close()
+	conn := db.Conn
+	db.mu.Unlock()
+	return conn.Close()
+}
+
+func (db *Database) Begin() (*sql.Tx, error) {
+	db.mu.RLock()
+	conn := db.Conn
+	db.mu.RUnlock()
+	return conn.Begin()
 }
 

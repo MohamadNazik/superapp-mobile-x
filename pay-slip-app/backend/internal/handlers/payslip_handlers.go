@@ -77,28 +77,19 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 	}
 	userEmail := targetUser.Email
 
-	// Upsert check
+	// 1. Check for existing record to handle orphaned files later if this is an update
 	existing, err := h.PaySlipService.GetPaySlipByUserMonthYear(req.UserID, req.Month, req.Year)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 
+	var oldFilePath string
 	if existing != nil {
-		if err := h.PaySlipService.UpdatePaySlipFile(existing.ID, req.FilePath, currentUser.ID); err != nil {
-			http.Error(w, "Failed to update pay slip", http.StatusInternalServerError)
-			return
-		}
-		updated, err := h.PaySlipService.GetPaySlipByID(existing.ID)
-		if err != nil {
-			http.Error(w, "Failed to retrieve updated pay slip", http.StatusInternalServerError)
-			return
-		}
-
-		jsonResponse(w, http.StatusOK, updated)
-		return
+		oldFilePath = existing.FilePath
 	}
 
+	// 2. Atomic Upsert using the new service method
 	ps := &models.PaySlip{
 		UserID:     req.UserID,
 		UserEmail:  userEmail,
@@ -106,14 +97,27 @@ func (h *Handler) CreatePaySlip(w http.ResponseWriter, r *http.Request) {
 		Year:       req.Year,
 		FilePath:   req.FilePath,
 		UploadedBy: currentUser.ID,
-		CreatedAt:  time.Now(),
 	}
-	if err := h.PaySlipService.InsertPaySlip(ps); err != nil {
+
+	result, created, err := h.PaySlipService.UpsertPaySlip(ps)
+	if err != nil {
 		http.Error(w, "Failed to save pay slip", http.StatusInternalServerError)
 		return
 	}
 
-	jsonResponse(w, http.StatusCreated, ps)
+	// 3. Clean up orphaned file if this was an update and the file path changed
+	if !created && oldFilePath != "" && oldFilePath != result.FilePath {
+		// We log the error but don't fail the request since the DB update was successful
+		if err := h.Storage.DeleteFile(r.Context(), oldFilePath); err != nil {
+			fmt.Printf("Warning: failed to delete orphaned file %q: %v\n", oldFilePath, err)
+		}
+	}
+
+	statusCode := http.StatusOK
+	if created {
+		statusCode = http.StatusCreated
+	}
+	jsonResponse(w, statusCode, result)
 }
 
 // GetMyPaySlips handles GET /api/pay-slips - Returns only the caller's own pay slips
@@ -270,7 +274,11 @@ func (h *Handler) parsePagination(r *http.Request) (int, string, *time.Time, err
 		decoded, _ := base64.StdEncoding.DecodeString(cursorStr)
 		parts := strings.Split(string(decoded), "|")
 
-		if ts, err := time.Parse(time.RFC3339, parts[0]); err == nil && len(parts) == 2 {
+		if len(parts) != 2 {
+			return 0, "", nil, fmt.Errorf("invalid cursor format")
+		}
+
+		if ts, err := time.Parse(time.RFC3339, parts[0]); err == nil {
 			afterCreatedAt = &ts
 			afterID = parts[1]
 		}

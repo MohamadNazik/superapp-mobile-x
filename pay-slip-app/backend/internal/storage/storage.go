@@ -61,6 +61,18 @@ func (s *FirebaseStorage) UploadFile(ctx context.Context, r io.Reader, originalF
 	return objectPath, nil
 }
 
+// DeleteFile deletes an object from the bucket.
+func (s *FirebaseStorage) DeleteFile(ctx context.Context, objectPath string) error {
+	if objectPath == "" {
+		return nil
+	}
+	err := s.client.Bucket(s.bucket).Object(objectPath).Delete(ctx)
+	if err != nil {
+		return fmt.Errorf("storage: failed to delete object %q: %w", objectPath, err)
+	}
+	return nil
+}
+
 func (s *FirebaseStorage) getContentType(ext string) string {
 	switch ext {
 	case ".pdf":

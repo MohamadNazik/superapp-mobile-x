@@ -41,6 +41,47 @@ func (s *PaySlipService) UpdatePaySlipFile(id, filePath, uploadedBy string) erro
 	return err
 }
 
+func (s *PaySlipService) UpsertPaySlip(ps *models.PaySlip) (*models.PaySlip, bool, error) {
+	if ps.ID == "" {
+		ps.ID = uuid.New().String()
+	}
+	now := time.Now()
+	ps.CreatedAt = now
+	ps.UpdatedAt = now
+
+	// Use MySQL's atomic INSERT ... ON DUPLICATE KEY UPDATE.
+	// This ensures atomicity and performance, especially with the unique constraint on (user_id, month, year).
+	query := `
+		INSERT INTO pay_slips (id, user_id, user_email, month, year, file_path, uploaded_by, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON DUPLICATE KEY UPDATE
+			file_path = VALUES(file_path),
+			uploaded_by = VALUES(uploaded_by),
+			updated_at = VALUES(updated_at)
+	`
+	res, err := s.db.Exec(query, ps.ID, ps.UserID, ps.UserEmail, ps.Month, ps.Year, ps.FilePath, ps.UploadedBy, ps.CreatedAt, ps.UpdatedAt)
+	if err != nil {
+		return nil, false, err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return nil, false, err
+	}
+
+	// In MySQL, RowsAffected is 1 for a new insert and 2 for an update.
+	created := rowsAffected == 1
+
+	// Fetch the final record to ensure we have the correct ID and CreatedAt.
+	// (If it was an update, the ID and CreatedAt in our 'ps' object were just placeholders).
+	finalPS, err := s.GetPaySlipByUserMonthYear(ps.UserID, ps.Month, ps.Year)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return finalPS, created, nil
+}
+
 func (s *PaySlipService) DeletePaySlip(id string) error {
 	_, err := s.db.Exec("DELETE FROM pay_slips WHERE id = ?", id)
 	return err
