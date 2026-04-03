@@ -107,12 +107,7 @@ func HandleDeletePermission(svc *Service) gin.HandlerFunc {
 func HandleGetGroupPermissions(svc *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		groupID := c.Param("id")
-		if _, err := uuid.Parse(groupID); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid group ID"})
-			return
-		}
-
-		permissions, err := svc.GetPermissionsByGroupID(groupID)
+		permissions, err := svc.GetPermissionsByGroupID(c.Request.Context(), groupID)
 		if err != nil {
 			switch {
 			case errors.Is(err, ErrGroupNotFound):
