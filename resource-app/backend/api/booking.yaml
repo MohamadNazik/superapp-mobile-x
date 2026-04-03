@@ -1,0 +1,466 @@
+openapi: 3.0.0
+info:
+  title: Booking Domain API
+  description: API endpoints for managing resource bookings and utilization stats in the resource-app
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8082/api
+    description: API server (local)
+  - url: /api
+    description: API server (relative)
+
+paths:
+  /bookings:
+    get:
+      summary: Get all bookings
+      description: Retrieve a list of all bookings
+      operationId: getBookings
+      tags:
+        - Bookings
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Successfully retrieved bookings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Booking"
+        "500":
+          description: Failed to fetch bookings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      summary: Create a new booking
+      description: Create a new booking for a resource
+      operationId: createBooking
+      tags:
+        - Bookings
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBookingRequest"
+      responses:
+        "201":
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/Booking"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: User does not have permission to book this resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Resource is already booked for the requested time slot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to create booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /bookings/{id}/process:
+    patch:
+      summary: Process/update booking status
+      description: Confirm, reject, or update the status of a booking
+      operationId: processBooking
+      tags:
+        - Bookings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Booking ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcessBookingRequest"
+      responses:
+        "200":
+          description: Booking status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/Booking"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to update booking status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /bookings/{id}/reschedule:
+    patch:
+      summary: Reschedule a booking
+      description: Move a booking to a different time slot
+      operationId: rescheduleBooking
+      tags:
+        - Bookings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Booking ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RescheduleBookingRequest"
+      responses:
+        "200":
+          description: Booking rescheduled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/Booking"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: New time slot is already booked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to reschedule booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /bookings/{id}:
+    delete:
+      summary: Cancel a booking
+      description: Cancel/delete a booking
+      operationId: cancelBooking
+      tags:
+        - Bookings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Booking ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Booking cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: boolean
+        "404":
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to cancel booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stats:
+    get:
+      summary: Get resource utilization statistics
+      description: Get resource usage statistics and utilization rates
+      operationId: getStats
+      tags:
+        - Statistics
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Successfully retrieved utilization statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ResourceUsageStats"
+        "500":
+          description: Failed to calculate stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique booking identifier
+        resourceId:
+          type: string
+          format: uuid
+          description: ID of the booked resource
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user who made the booking
+        start:
+          type: string
+          format: date-time
+          description: Start time of the booking
+        end:
+          type: string
+          format: date-time
+          description: End time of the booking
+        status:
+          type: string
+          enum:
+            [
+              pending,
+              confirmed,
+              rejected,
+              cancelled,
+              completed,
+              checked_in,
+              proposed,
+            ]
+          description: Current status of the booking
+        rejectionReason:
+          type: string
+          nullable: true
+          description: Reason for rejection (if status is rejected)
+        details:
+          type: object
+          nullable: true
+          description: Additional booking details in JSON format
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when booking was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when booking was last updated
+      required:
+        - id
+        - resourceId
+        - userId
+        - start
+        - end
+        - status
+
+    ResourceUsageStats:
+      type: object
+      properties:
+        resourceId:
+          type: string
+          format: uuid
+          description: ID of the resource
+        resourceName:
+          type: string
+          description: Name of the resource
+        resourceType:
+          type: string
+          description: Type of the resource
+        bookingCount:
+          type: integer
+          description: Total number of bookings
+        totalHours:
+          type: integer
+          description: Total hours booked
+        utilizationRate:
+          type: integer
+          description: Utilization rate as a percentage
+
+    CreateBookingRequest:
+      type: object
+      properties:
+        resourceId:
+          type: string
+          format: uuid
+          description: ID of the resource to book
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        start:
+          type: string
+          format: date-time
+          description: Start time of the booking
+          example: "2024-04-15T09:00:00Z"
+        end:
+          type: string
+          format: date-time
+          description: End time of the booking
+          example: "2024-04-15T11:00:00Z"
+        details:
+          type: object
+          nullable: true
+          description: Additional booking details in JSON format
+          example: { "purpose": "Team meeting", "attendees": 5 }
+      required:
+        - resourceId
+        - start
+        - end
+
+    ProcessBookingRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            [
+              pending,
+              confirmed,
+              rejected,
+              cancelled,
+              completed,
+              checked_in,
+              proposed,
+            ]
+          description: New status for the booking
+          example: "confirmed"
+        rejectionReason:
+          type: string
+          description: Reason for rejection (typically provided when status is rejected)
+          example: "Resource not available"
+      required:
+        - status
+
+    RescheduleBookingRequest:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+          description: New start time for the booking
+          example: "2024-04-16T09:00:00Z"
+        end:
+          type: string
+          format: date-time
+          description: New end time for the booking
+          example: "2024-04-16T11:00:00Z"
+      required:
+        - start
+        - end
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+      required:
+        - error
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
