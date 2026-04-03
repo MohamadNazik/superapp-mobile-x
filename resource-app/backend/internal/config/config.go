@@ -7,6 +7,7 @@ import (
 const (
 	ServiceName = "resource-app"
 	DefaultPort = "8082"
+	AutoMigrate = false
 
 	// Database defaults
 	DefaultDatabaseURL = "root:password@tcp(localhost:3306)/resource_app?charset=utf8mb4&parseTime=True&loc=Local"
