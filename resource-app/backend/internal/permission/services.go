@@ -34,8 +34,8 @@ func (s *Service) DeletePermission(id string) error {
 	return s.repo.DeletePermission(id)
 }
 
-func (s *Service) GetPermissionsByGroupID(groupID string) ([]GroupPermissionResult, error) {
-	return s.repo.GetPermissionsByGroupID(groupID)
+func (s *Service) GetPermissionsByGroupID(ctx context.Context, groupID string) ([]GroupPermissionResult, error) {
+	return s.repo.GetPermissionsByGroupID(ctx, groupID)
 }
 
 func (s *Service) GetPermissionsByResourceID(ctx context.Context, resourceID string) ([]ResourcePermissionResult, error) {

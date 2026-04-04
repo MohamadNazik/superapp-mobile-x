@@ -12,7 +12,7 @@ type Repository interface {
 	CreatePermission(permission *ResourcePermission) error
 	UpdatePermissionType(id string, permissionType PermissionType) (*ResourcePermission, error)
 	DeletePermission(id string) error
-	GetPermissionsByGroupID(groupID string) ([]GroupPermissionResult, error)
+	GetPermissionsByGroupID(ctx context.Context, groupID string) ([]GroupPermissionResult, error)
 	GetPermissionsByResourceID(ctx context.Context, resourceID string) ([]ResourcePermissionResult, error)
 	HasUserPermissionForResource(userID, resourceID string, permissionType PermissionType) (bool, error)
 }
@@ -89,25 +89,27 @@ func (r *GormRepository) DeletePermission(id string) error {
 	return nil
 }
 
-func (r *GormRepository) GetPermissionsByGroupID(groupID string) ([]GroupPermissionResult, error) {
-	var groupCount int64
-	if err := r.db.Table("groups").Where("id = ?", groupID).Count(&groupCount).Error; err != nil {
-		return nil, err
-	}
-	if groupCount == 0 {
-		return nil, ErrGroupNotFound
-	}
-
+func (r *GormRepository) GetPermissionsByGroupID(ctx context.Context, groupID string) ([]GroupPermissionResult, error) {
 	var permissions []GroupPermissionResult
-	err := r.db.Table("resource_permissions rp").
+	err := r.db.WithContext(ctx).
+		Table("resource_permissions AS rp").
 		Select("rp.id, rp.resource_id, r.name AS resource_name, rp.permission_type").
-		Joins("JOIN resources r ON r.id = rp.resource_id").
+		Joins("JOIN resources AS r ON r.id = rp.resource_id").
 		Where("rp.group_id = ?", groupID).
-		Order("r.name ASC").
-		Order("rp.permission_type ASC").
+		Order("r.name ASC, rp.permission_type ASC").
 		Scan(&permissions).Error
 	if err != nil {
 		return nil, err
+	}
+
+	if len(permissions) == 0 {
+		var groupCount int64
+		if err := r.db.WithContext(ctx).Table("`groups`").Where("id = ?", groupID).Count(&groupCount).Error; err != nil {  
+			return nil, err
+		}
+		if groupCount == 0 {
+			return nil, ErrGroupNotFound
+		}
 	}
 
 	return permissions, nil
