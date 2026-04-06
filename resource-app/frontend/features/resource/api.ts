@@ -6,10 +6,11 @@ import { Resource, ResourceUsageStats, ResourcePermission, PermissionType } from
 const handle = async <T>(request: Promise<{ data: { data: T } }>): Promise<ApiResponse<T>> => {
   try {
     const res = await request;
-    return { success: true, data: res.data.data };
-  } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : 'Unknown error';
-    return { success: false, error: msg };
+    return { success: true, data: res.data.data, status: 200 };
+  } catch (error: any) {
+    const status = error?.response?.status || error?.status;
+    const msg = error?.response?.data?.error || error?.message || 'Unknown error';
+    return { success: false, error: msg, status };
   }
 };
 

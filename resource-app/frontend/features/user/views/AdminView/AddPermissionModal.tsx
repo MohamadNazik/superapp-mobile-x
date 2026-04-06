@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, CustomSelect, Label } from '../../../../components/UI';
 import { useGroup } from '../../../group/context';
 import { useResource } from '../../../resource/context';
@@ -22,11 +22,16 @@ export const AddPermissionModal = ({ isOpen, onClose, resourceId }: AddPermissio
   const [error, setError] = useState<string | null>(null);
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
  
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedGroupId('');
+      setSelectedTypes([]);
+      setError(null);
+      setConflictModalOpen(false);
+    }
+  }, [isOpen]);
+
   const handleClose = () => {
-    setSelectedGroupId('');
-    setSelectedTypes([]);
-    setError(null);
-    setConflictModalOpen(false);
     onClose();
   };
 
@@ -44,18 +49,18 @@ export const AddPermissionModal = ({ isOpen, onClose, resourceId }: AddPermissio
     setIsSubmitting(true);
     setError(null);
     try {
-      const result = await addPermissionsToResource(resourceId, selectedGroupId, selectedTypes);
-      if (result.success) {
-        handleClose();
+      await addPermissionsToResource(resourceId, selectedGroupId, selectedTypes);
+      handleClose();
+    } catch (err: any) {
+      const isConflict = err.status === 409 || 
+                        err.error?.toLowerCase().includes('already exists') ||
+                        err.message?.toLowerCase().includes('already exists');
+
+      if (isConflict) {
+        setConflictModalOpen(true);
       } else {
-        if (result.error?.includes('already exists')) {
-          setConflictModalOpen(true);
-        } else {
-          setError(result.error || 'Failed to add permissions');
-        }
+        setError(err.error || err.message || 'Failed to add permissions');
       }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
     }
@@ -147,7 +152,7 @@ export const AddPermissionModal = ({ isOpen, onClose, resourceId }: AddPermissio
             This group already has the selected permissions for this resource.
           </p>
           <Button className="w-full" onClick={handleClose}>
-            Understood
+            OK
           </Button>
         </div>
       </Modal>

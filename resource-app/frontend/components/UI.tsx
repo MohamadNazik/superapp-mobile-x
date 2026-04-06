@@ -241,7 +241,7 @@ export const CustomSelect = ({
           className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-y-auto max-h-[200px] py-1"
         >
           <li
-            onClick={() => { onChange({ target: { value: '' } }); setOpen(false); }}
+            onClick={(e) => { e.stopPropagation(); onChange({ target: { value: '' } }); setOpen(false); }}
             className="px-3 py-2 text-sm text-slate-400 cursor-pointer hover:bg-slate-50 select-none"
           >
             {placeholder}
@@ -249,7 +249,7 @@ export const CustomSelect = ({
           {options.map(opt => (
             <li
               key={opt.value}
-              onClick={() => { onChange({ target: { value: opt.value } }); setOpen(false); }}
+              onClick={(e) => { e.stopPropagation(); onChange({ target: { value: opt.value } }); setOpen(false); }}
               className={cn(
                 'px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 select-none',
                 opt.value === value && 'bg-primary-50 text-primary-700 font-medium'

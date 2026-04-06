@@ -12,6 +12,7 @@ interface ResourceContextType {
   stats: ResourceUsageStats[];
   permissions: ResourcePermission[];
   isLoading: boolean;
+  isPermissionsLoading: boolean;
   error: string | null;
   refreshResources: () => Promise<void>;
   fetchStats: () => Promise<void>;
@@ -30,6 +31,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [stats, setStats] = useState<ResourceUsageStats[]>([]);
   const [permissions, setPermissions] = useState<ResourcePermission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPermissionsLoading, setIsPermissionsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchResources = useCallback(async () => {
@@ -37,8 +39,8 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
     setError(null);
     try {
       const res = await resourceApi.getResources();
-      if (res.success && res.data) {
-        setResources(res.data);
+      if (res.success) {
+        setResources(res.data || []);
       } else {
         setError(res.error || 'Failed to fetch resources');
       }
@@ -51,13 +53,15 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, []);
 
   const fetchPermissions = useCallback(async (resourceId: string) => {
+    setIsPermissionsLoading(true);
     setError(null);
     const res = await resourceApi.getResourcePermissions(resourceId);
-    if (res.success && res.data) {
-      setPermissions(res.data);
+    if (res.success) {
+      setPermissions(res.data || []);
     } else {
       setError(res.error || 'Failed to fetch permissions');
     }
+    setIsPermissionsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -67,8 +71,8 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
   const fetchStats = useCallback(async () => {
     try {
       const res = await resourceApi.getUtilizationStats();
-      if (res.success && res.data) {
-        setStats(res.data);
+      if (res.success) {
+        setStats(res.data || []);
       }
     } catch (err: unknown) {
       console.error('fetchStats error:', err);
@@ -77,8 +81,9 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const addResource = useCallback(async (data: Omit<Resource, 'id'>) => {
     const res = await resourceApi.addResource(data);
-    if (res.success && res.data) {
-      setResources(prev => [...prev, res.data!]);
+    if (res.success) {
+      const newResource = res.data!;
+      setResources(prev => [...prev, newResource]);
       return { success: true };
     }
     return { success: false, error: res.error || 'Failed to add resource' };
@@ -86,8 +91,9 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const updateResource = useCallback(async (data: Resource) => {
     const res = await resourceApi.updateResource(data);
-    if (res.success && res.data) {
-      setResources(prev => prev.map(r => r.id === data.id ? res.data! : r));
+    if (res.success) {
+      const updatedResource = res.data!;
+      setResources(prev => prev.map(r => r.id === data.id ? updatedResource : r));
       return { success: true };
     }
     return { success: false, error: res.error || 'Failed to update resource' };
@@ -109,7 +115,14 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
     
     const failure = results.find(res => !res.success);
     if (failure) {
-      return { success: false, error: failure.error || 'Failed to add some permissions' };
+      // More robust check for conflict (409) to avoid global error screen
+      const isConflict = Number(failure.status) === 409 || 
+                        failure.error?.toLowerCase().includes('already exists');
+      
+      if (!isConflict) {
+        setError(failure.error || 'Failed to add some permissions');
+      }
+      throw failure;
     }
     return { success: true };
   }, [fetchPermissions]);
@@ -128,6 +141,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
     stats,
     permissions,
     isLoading,
+    isPermissionsLoading,
     error,
     refreshResources: fetchResources,
     fetchStats,

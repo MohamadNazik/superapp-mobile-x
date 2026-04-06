@@ -26,8 +26,8 @@ export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children })
     setError(null);
     try {
       const res = await bookingApi.getBookings();
-      if (res.success && res.data) {
-        setBookings(res.data);
+      if (res.success) {
+        setBookings(res.data || []);
       } else {
         setError(res.error || 'Failed to fetch bookings');
       }
@@ -46,9 +46,10 @@ export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children })
   const createBooking = useCallback(async (data: Record<string, unknown>) => {
     const res = await bookingApi.createBooking(data);
     if (res.success && res.data) {
-      setBookings(prev => [...prev, res.data!]);
+      const newBooking = res.data;
+      setBookings(prev => [...prev, newBooking]);
     }
-    return res as ApiResponse<Booking>;
+    return res;
   }, []);
 
   const cancelBooking = useCallback(async (id: string) => {
