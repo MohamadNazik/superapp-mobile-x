@@ -100,7 +100,7 @@ func HandleDeletePermission(svc *Service) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"success": true, "data": true})
+		c.Status(http.StatusNoContent)
 	}
 }
 

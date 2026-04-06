@@ -94,7 +94,7 @@ func HandleDeleteGroup(svc *Service) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"success": true, "data": true})
+		c.Status(http.StatusNoContent)
 	}
 }
 
@@ -148,7 +148,7 @@ func HandleRemoveUserFromGroup(svc *Service) gin.HandlerFunc {
 			return
 		}
 
-		result, err := svc.RemoveUserFromGroup(groupID, userID)
+		_, err := svc.RemoveUserFromGroup(groupID, userID)
 		if err != nil {
 			switch {
 			case errors.Is(err, ErrGroupNotFound), errors.Is(err, ErrGroupMembershipNotFound):
@@ -159,7 +159,7 @@ func HandleRemoveUserFromGroup(svc *Service) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"success": true, "data": result})
+		c.Status(http.StatusNoContent)
 	}
 }
 

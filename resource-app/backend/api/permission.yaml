@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Permission Domain API
-  description: API endpoints for managing resource permissions and group access control in the resource-app. All endpoints in this domain require Admin privileges.  
+  description: API endpoints for managing resource permissions and group access control in the resource-app. All endpoints in this domain require Admin privileges.
   version: 1.0.0
 
 servers:
@@ -142,18 +142,8 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        "204":
           description: Permission deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: boolean
         "400":
           description: Invalid permission ID format
           content:

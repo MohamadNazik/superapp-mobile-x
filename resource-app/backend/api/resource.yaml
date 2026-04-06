@@ -44,7 +44,7 @@ paths:
 
     post:
       summary: Create a new resource
-      description: Create a new resource with the provided details. Requires Admin privileges.  
+      description: Create a new resource with the provided details. Requires Admin privileges.
       operationId: createResource
       tags:
         - Resources
@@ -85,7 +85,7 @@ paths:
   /resources/{id}:
     put:
       summary: Update a resource
-      description: Update an existing resource by ID. Requires Admin privileges.  
+      description: Update an existing resource by ID. Requires Admin privileges.
       operationId: updateResource
       tags:
         - Resources
@@ -133,7 +133,7 @@ paths:
 
     delete:
       summary: Delete a resource
-      description: Delete a resource by ID. Requires Admin privileges.  
+      description: Delete a resource by ID. Requires Admin privileges.
       operationId: deleteResource
       tags:
         - Resources
@@ -148,18 +148,8 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        "204":
           description: Resource deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: boolean
         "500":
           description: Failed to delete resource
           content:

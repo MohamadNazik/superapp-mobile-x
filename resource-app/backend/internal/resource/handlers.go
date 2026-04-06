@@ -75,6 +75,6 @@ func HandleDeleteResource(svc *Service) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete resource"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"success": true, "data": true})
+		c.Status(http.StatusNoContent)
 	}
 }
