@@ -4,15 +4,11 @@ import (
 	"log"
 	"time"
 
-	"resource-app/internal/booking"
-	"resource-app/internal/config"
-	"resource-app/internal/group"
-	"resource-app/internal/permission"
-	"resource-app/internal/resource"
-	"resource-app/internal/user"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"resource-app/internal/config"
 )
 
 // NewDatabase creates a new database connection
@@ -25,13 +21,6 @@ func NewDatabase(dsn string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	if config.AutoMigrate {
-		// Auto-migrate models
-		if err := db.AutoMigrate(&user.User{}, &resource.Resource{}, &booking.Booking{}, &group.Group{}, &group.UserGroup{}, &permission.ResourcePermission{}); err != nil {
-			return nil, err
-		}
-	}
-
 	// Configure connection pool
 	if sqlDB, err := db.DB(); err == nil {
 		sqlDB.SetConnMaxLifetime(time.Duration(config.ConnMaxLifetimeMinutes) * time.Minute)
@@ -39,10 +28,6 @@ func NewDatabase(dsn string) (*gorm.DB, error) {
 		sqlDB.SetMaxOpenConns(config.MaxOpenConns)
 	}
 
-	if config.AutoMigrate {
-		log.Println("Database connection established and schema migrated successfully")
-	} else {
-		log.Println("Database connection established without auto-migration")
-	}
+	log.Println("Database connection established successfully")
 	return db, nil
 }
