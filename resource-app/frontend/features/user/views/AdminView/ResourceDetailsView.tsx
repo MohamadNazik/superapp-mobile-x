@@ -20,14 +20,18 @@ export const ResourceDetailsView = ({ resource, onBack }: ResourceDetailsViewPro
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [permissionIdToDelete, setPermissionIdToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeletingPermission, setIsDeletingPermission] = useState(false);
+  const [deletePermissionError, setDeletePermissionError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPermissions(resource.id);
   }, [resource.id, fetchPermissions]);
 
-  if (isLoading && permissions.length === 0) {
-    return <PageLoader />;
-  }
+  useEffect(() => {
+    if (!permissionIdToDelete) {
+      setDeletePermissionError(null);
+    }
+  }, [permissionIdToDelete]);
 
   const handleDelete = async () => {
     if (isDeleting) return;
@@ -40,6 +44,24 @@ export const ResourceDetailsView = ({ resource, onBack }: ResourceDetailsViewPro
     }
   };
 
+  const handleDeletePermission = async () => {
+    if (!permissionIdToDelete) return;
+    setIsDeletingPermission(true);
+    setDeletePermissionError(null);
+    
+    try {
+      const res = await deletePermission(permissionIdToDelete);
+      if (res.success) {
+        setPermissionIdToDelete(null);
+      } else {
+        setDeletePermissionError(res.error || 'Failed to remove permission');
+      }
+    } catch (err: any) {
+      setDeletePermissionError(err.message || 'An unexpected error occurred');
+    } finally {
+      setIsDeletingPermission(false);
+    }
+  };
 
   if (isEditing) {
     return (
@@ -250,22 +272,29 @@ export const ResourceDetailsView = ({ resource, onBack }: ResourceDetailsViewPro
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="ghost" className="flex-1" onClick={() => setPermissionIdToDelete(null)}>
+            <Button 
+                variant="ghost" 
+                className="flex-1" 
+                onClick={() => setPermissionIdToDelete(null)}
+                disabled={isDeletingPermission}
+            >
               Cancel
             </Button>
             <Button 
               variant="danger" 
               className="flex-1" 
-              onClick={async () => {
-                if (permissionIdToDelete) {
-                  await deletePermission(permissionIdToDelete);
-                  setPermissionIdToDelete(null);
-                }
-              }}
+              onClick={handleDeletePermission}
+              isLoading={isDeletingPermission}
+              disabled={isDeletingPermission}
             >
               Remove
             </Button>
           </div>
+          {deletePermissionError && (
+              <p className="mt-2 text-xs text-red-500 font-medium bg-red-50 p-2 rounded border border-red-100 animate-in fade-in">
+                  {deletePermissionError}
+              </p>
+          )}
         </div>
       </Modal>
     </div>

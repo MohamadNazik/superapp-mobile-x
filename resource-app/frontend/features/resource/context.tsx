@@ -5,6 +5,7 @@ import { resourceApi } from './api';
 export interface MutationResult {
   success: boolean;
   error?: string;
+  status?: number;
 }
 
 interface ResourceContextType {
@@ -84,9 +85,9 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (res.success) {
       const newResource = res.data!;
       setResources(prev => [...prev, newResource]);
-      return { success: true };
+      return { success: true, status: res.status };
     }
-    return { success: false, error: res.error || 'Failed to add resource' };
+    return { success: false, error: res.error || 'Failed to add resource', status: res.status };
   }, []);
 
   const updateResource = useCallback(async (data: Resource) => {
@@ -94,9 +95,9 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (res.success) {
       const updatedResource = res.data!;
       setResources(prev => prev.map(r => r.id === data.id ? updatedResource : r));
-      return { success: true };
+      return { success: true, status: res.status };
     }
-    return { success: false, error: res.error || 'Failed to update resource' };
+    return { success: false, error: res.error || 'Failed to update resource', status: res.status };
   }, []);
 
   const deleteResource = useCallback(async (id: string) => {
@@ -122,7 +123,11 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
       if (!isConflict) {
         setError(failure.error || 'Failed to add some permissions');
       }
-      throw failure;
+      
+      const err = new Error(failure.error || 'Failed to add some permissions');
+      (err as any).status = failure.status;
+      (err as any).error = failure.error;
+      throw err;
     }
     return { success: true };
   }, [fetchPermissions]);
@@ -131,9 +136,9 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
     const res = await resourceApi.deletePermission(permissionId);
     if (res.success) {
       setPermissions(prev => prev.filter(p => p.id !== permissionId));
-      return { success: true };
+      return { success: true, status: res.status };
     }
-    return { success: false, error: res.error || 'Failed to delete permission' };
+    return { success: false, error: res.error || 'Failed to delete permission', status: res.status };
   }, []);
 
   const value = useMemo(() => ({
@@ -151,7 +156,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({ children }
     deleteResource,
     addPermissionsToResource,
     deletePermission,
-  }), [resources, stats, permissions, isLoading, error, fetchResources, fetchStats, fetchPermissions, addResource, updateResource, deleteResource, addPermissionsToResource, deletePermission]);
+  }), [resources, stats, permissions, isLoading, isPermissionsLoading, error, fetchResources, fetchStats, fetchPermissions, addResource, updateResource, deleteResource, addPermissionsToResource, deletePermission]);
 
   return (
     <ResourceContext.Provider value={value}>
