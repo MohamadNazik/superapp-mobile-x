@@ -306,7 +306,7 @@ paths:
                 file:
                   type: string
                   format: binary
-                  description: PDF or Image (max 10MB)
+                  description: PDF or Image (.pdf, .png, .jpg, .jpeg) (max 10MB)
       responses:
         "200":
           description: Uploaded successfully

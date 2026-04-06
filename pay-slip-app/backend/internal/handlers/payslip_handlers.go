@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"pay-slip-app/internal/constants"
+	"pay-slip-app/internal/file"
 	"pay-slip-app/internal/models"
 	"pay-slip-app/internal/utils"
 	"strconv"
@@ -27,15 +29,22 @@ func (h *PaySlipHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	// Enforce max upload size (10MB)
 	r.Body = http.MaxBytesReader(w, r.Body, int64(constants.MaxUploadSizeMB)<<20)
 
-	file, header, err := r.FormFile("file")
+	multipartFile, header, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "file is required and must be under 10MB", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer multipartFile.Close()
+
+	// Use our dedicated file validator for security checks
+	contentType, err := file.ValidatePaySlipFile(header.Filename, multipartFile)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v. Allowed extensions: %s", err, strings.Join(file.GetAllowedExtensions(), ", ")), http.StatusBadRequest)
+		return
+	}
 
 	ctx := r.Context()
-	path, err := h.PaySlipService.UploadFile(ctx, file, header.Filename)
+	path, err := h.PaySlipService.UploadFile(ctx, multipartFile, header.Filename, contentType)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to upload to storage: %v", err), http.StatusInternalServerError)
 		return

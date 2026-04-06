@@ -8,6 +8,8 @@ const (
 	MaxUploadSizeMB = 10 // maximum allowed pay slip file size in megabytes
 )
 
+var AllowedExtensions = []string{".pdf", ".png", ".jpg", ".jpeg"}
+
 // Database / connection defaults (tweak according to your environment)
 const (
 	ConnMaxLifetimeMinutes = 5  // number of minutes before a connection is recycled

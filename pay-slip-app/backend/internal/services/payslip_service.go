@@ -29,8 +29,8 @@ func NewPaySlipService(db *database.Database, cfg configs.FirebaseConfig) (*PayS
 }
 
 // UploadFile proxies the storage upload operation.
-func (s *PaySlipService) UploadFile(ctx context.Context, file io.Reader, filename string) (string, error) {
-	return s.storage.UploadFile(ctx, file, filename)
+func (s *PaySlipService) UploadFile(ctx context.Context, file io.Reader, filename string, contentType string) (string, error) {
+	return s.storage.UploadFile(ctx, file, filename, contentType)
 }
 
 // GetSignedURL proxies the storage signed URL generation.
