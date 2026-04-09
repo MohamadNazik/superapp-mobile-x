@@ -49,13 +49,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else {
         throw new Error(response.error || "Failed to fetch users");
       }
-    } catch (err: unknown) {
-      console.error("UserProvider error:", err);
-      setError(err instanceof Error ? err.message : "Failed to initialize user context");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  } catch (err: unknown) {
+    console.error("UserProvider error:", err);
+    setError(err instanceof Error ? err.message : "Failed to initialize user context");
+  } finally {
+    setIsLoading(false);
+  }
+}, []);
 
   useEffect(() => {
     fetchUsers();

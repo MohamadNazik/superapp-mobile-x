@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { cn } from '../utils/cn';
-import { Calendar as CalendarIcon, LayoutGrid, Shield } from 'lucide-react';
+import { Calendar as CalendarIcon, LayoutGrid, Shield, ClipboardCheck } from 'lucide-react';
 
 interface HeaderProps {
   title: string;
@@ -41,13 +41,21 @@ export const BottomNav = ({ activeTab, onTabChange, showAdmin }: BottomNavProps)
       <span className="text-[10px] font-medium">Book</span>
     </button>
 
-    {showAdmin && (
+    {showAdmin ? (
       <button
         onClick={() => onTabChange('admin')}
         className={cn("flex flex-col items-center pb-4 w-16 transition-colors", activeTab === 'admin' ? "text-primary-600" : "text-slate-400 hover:text-slate-600")}
       >
         <Shield size={24} className="mb-1" />
         <span className="text-[10px] font-medium">Admin</span>
+      </button>
+    ) : (
+      <button
+        onClick={() => onTabChange('manage')}
+        className={cn("flex flex-col items-center pb-4 w-16 transition-colors", activeTab === 'manage' ? "text-primary-600" : "text-slate-400 hover:text-slate-600")}
+      >
+        <ClipboardCheck size={24} className="mb-1" />
+        <span className="text-[10px] font-medium">Manage</span>
       </button>
     )}
 

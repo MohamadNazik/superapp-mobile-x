@@ -24,4 +24,13 @@ export const userApi = {
       return { success: false, error: error.message || 'Failed to update user role' };
     }
   },
+
+  getMyGroups: async (): Promise<ApiResponse<Array<{ id: string; name: string }>>> => {
+    try {
+      const response = await httpClient.get<{ data: any }>('/me/groups');
+      return { success: true, data: response.data.data };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Failed to fetch my groups' };
+    }
+  },
 };

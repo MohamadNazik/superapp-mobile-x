@@ -9,6 +9,7 @@ import { Resource } from './features/resource/types';
 import { CalendarView } from './features/calendar/views/CalendarView';
 import { CatalogView } from './features/resource/views/CatalogView';
 import { AdminView } from './features/user/views/AdminView';
+import { ManageView } from './features/user/views/ManageView';
 import { BookingView } from './features/booking/views/BookingView';
 import { PageLoader, Button } from './components/UI';
 import { BottomNav, Header } from './components/Layout';
@@ -66,12 +67,14 @@ const AppContent = () => {
       {currentTab === 'calendar' && <Header title="My Schedule" subtitle="Upcoming Bookings" />}
       {currentTab === 'catalog' && <Header title="Resource Catalog" subtitle="Find & Book" />}
       {currentTab === 'admin' && <Header title="Admin Dashboard" subtitle="Management & Analytics" />}
+      {currentTab === 'manage' && <Header title="Management" subtitle="Groups & My Responsibilities" />}
 
       {/* Main Content - Scrollable Area */}
       <main className="flex-1 overflow-y-auto px-4 pb-24 pt-[80px] max-w-md mx-auto w-full animate-in fade-in no-scrollbar">
         {currentTab === 'calendar' && <CalendarView />}
         {currentTab === 'catalog' && <CatalogView onSelect={setSelectedResource} />}
         {currentTab === 'admin' && isAdmin && <AdminView />}
+        {currentTab === 'manage' && !isAdmin && <ManageView />}
       </main>
 
       {/* Bottom Navigation */}
