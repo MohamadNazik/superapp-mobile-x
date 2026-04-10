@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { bookingApi } from "../../../../features/booking/api";
 import { Booking, BookingStatus } from "../../../../features/booking/types";
 import {
@@ -11,7 +11,7 @@ import {
   Label,
   EmptyState,
 } from "../../../../components/UI";
-import { ClipboardCheck, Search, AlertCircle, CheckCircle } from "lucide-react";
+import { ClipboardCheck, AlertCircle, CheckCircle } from "lucide-react";
 import { useResource } from "../../../resource/context";
 import { format } from "date-fns";
 
@@ -34,6 +34,11 @@ export const ManageApprovalsTab = () => {
   );
   const [newStartTime, setNewStartTime] = useState("");
   const [newEndTime, setNewEndTime] = useState("");
+
+  const pendingApprovals = useMemo(
+    () => approvals.filter((b) => b.status === BookingStatus.PENDING),
+    [approvals],
+  );
 
   const fetchApprovals = async () => {
     setIsLoading(true);
@@ -90,6 +95,12 @@ export const ManageApprovalsTab = () => {
 
   const handleReschedule = async () => {
     if (!rescheduleBookingId || !newStartTime || !newEndTime) return;
+
+    if (new Date(newStartTime) >= new Date(newEndTime)) {
+      setError("The proposed end time must be after the start time.");
+      return;
+    }
+
     setProcessingId(rescheduleBookingId);
     try {
       const res = await bookingApi.rescheduleBooking(
@@ -136,25 +147,23 @@ export const ManageApprovalsTab = () => {
           </h3>
         </div>
         <span className="text-[10px] font-black text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full border border-primary-100 uppercase tracking-tighter">
-          {approvals.filter((b) => b.status === BookingStatus.PENDING).length}{" "}
-          Pending
+          {pendingApprovals.length} Pending
         </span>
       </div>
 
       <div className="grid gap-4 pt-2">
-        {approvals.filter((b) => b.status === BookingStatus.PENDING).length ===
-        0 ? (
+        {pendingApprovals.length === 0 ? (
           <EmptyState
             icon={CheckCircle}
             message="You are all caught up! No pending requests."
           />
         ) : (
-          approvals
-            .filter((b) => b.status === BookingStatus.PENDING)
-            .map((booking) => {
+          pendingApprovals.map((booking) => {
               const res = resources.find((r) => r.id === booking.resourceId);
               // In the enriched mock response, we have userEmail directly
-              const requesterEmail = (booking as any).userEmail || "Unknown";
+              const requesterEmail =
+                (booking as Booking & { userEmail?: string }).userEmail ||
+                "Unknown";
 
               return (
                 <Card
