@@ -7,13 +7,12 @@ import { BookingStatus } from '../../../../features/booking/types';
 import { GroupProvider } from '../../../group/context';
 
 import { ApprovalsTab } from './ApprovalsTab';
-import { UsersTab } from './UsersTab';
 import { ResourcesTab } from './ResourcesTab';
 import { AnalyticsTab } from './AnalyticsTab';
 import { GroupsTab } from './GroupsTab';
 
-type AdminTab = 'approvals' | 'users' | 'groups' | 'resources' | 'analytics';
-const ADMIN_TABS: readonly AdminTab[] = ['approvals', 'users', 'groups', 'resources', 'analytics'];
+type AdminTab = 'approvals' | 'groups' | 'resources' | 'analytics';
+const ADMIN_TABS: readonly AdminTab[] = ['approvals', 'groups', 'resources', 'analytics'];
 
 export const AdminView = () => {
   const { isLoading } = useResource();
@@ -56,7 +55,6 @@ export const AdminView = () => {
 
         {/* Tab Contents */}
         {tab === 'approvals' && <ApprovalsTab />}
-        {tab === 'users' && <UsersTab />}
         {tab === 'resources' && <ResourcesTab onActiveFullScreen={setIsFullScreenActive} />}
         {tab === 'analytics' && <AnalyticsTab />}
         {tab === 'groups' && <GroupsTab onActiveFullScreen={setIsFullScreenActive} />}
