@@ -117,6 +117,7 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
     const query = addUserSearch.toLowerCase();
     return allUsers
       .filter(u => !memberIds.has(u.id))
+      .filter(u => u.role !== 'ADMIN')
       .filter(u =>
         u.email.toLowerCase().includes(query)
       );

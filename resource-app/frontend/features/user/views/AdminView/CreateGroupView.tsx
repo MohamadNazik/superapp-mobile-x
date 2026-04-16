@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Save, CheckSquare, Square, Search } from 'lucide-react';
-import { Button, Input, Label } from '../../../../components/UI';
-import { useGroup } from '../../../group/context';
-import { useUser } from '../../context';
+import React, { useState, useMemo } from "react";
+import { ArrowLeft, Save, CheckSquare, Square, Search } from "lucide-react";
+import { Button, Input, Label } from "../../../../components/UI";
+import { useGroup } from "../../../group/context";
+import { useUser } from "../../context";
 
 interface CreateGroupViewProps {
   onClose: () => void;
@@ -12,22 +12,24 @@ export const CreateGroupView = ({ onClose }: CreateGroupViewProps) => {
   const { createGroup, error: groupError } = useGroup();
   const { allUsers } = useUser();
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredUsers = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    return allUsers.filter(u =>
-      u.email.toLowerCase().includes(query)
-    );
+    return allUsers
+      .filter((u) => u.role !== "ADMIN")
+      .filter((u) => u.email.toLowerCase().includes(query));
   }, [allUsers, searchQuery]);
 
   const toggleUser = (userId: string) => {
-    setSelectedUserIds(prev =>
-      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    setSelectedUserIds((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
     );
   };
 
@@ -52,28 +54,34 @@ export const CreateGroupView = ({ onClose }: CreateGroupViewProps) => {
     <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col animate-in fade-in duration-200">
       {/* Header */}
       <div className="bg-white px-4 py-3 border-b border-slate-200 flex items-center gap-3 shrink-0 shadow-sm">
-        <button onClick={onClose} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors">
+        <button
+          onClick={onClose}
+          className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors"
+        >
           <ArrowLeft size={20} />
         </button>
         <div>
           <h2 className="text-sm font-bold text-slate-900">Create New Group</h2>
-          <p className="text-xs text-slate-500">Define group details and assign members</p>
+          <p className="text-xs text-slate-500">
+            Define group details and assign members
+          </p>
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-8 pb-24">
-
         {/* 1. Basic Details */}
         <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase text-slate-400 px-1 tracking-wide border-b border-slate-200 pb-2">Group Details</h3>
+          <h3 className="text-xs font-bold uppercase text-slate-400 px-1 tracking-wide border-b border-slate-200 pb-2">
+            Group Details
+          </h3>
 
           <div>
             <Label required>Group Name</Label>
             <Input
               placeholder="e.g. Level 1 Officers"
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               autoFocus
             />
           </div>
@@ -83,7 +91,7 @@ export const CreateGroupView = ({ onClose }: CreateGroupViewProps) => {
             <Input
               placeholder="e.g. Officers assigned to Level 1 resources"
               value={description}
-              onChange={e => setDescription(e.target.value)}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </div>
         </section>
@@ -103,11 +111,14 @@ export const CreateGroupView = ({ onClose }: CreateGroupViewProps) => {
 
           {/* Search */}
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
             <Input
               placeholder="Search users by email..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
             />
           </div>
@@ -115,9 +126,11 @@ export const CreateGroupView = ({ onClose }: CreateGroupViewProps) => {
           {/* User List */}
           <div className="space-y-1 max-h-[40vh] overflow-y-auto rounded-lg border border-slate-200 bg-white">
             {filteredUsers.length === 0 ? (
-              <p className="text-xs text-slate-400 italic p-4 text-center">No users found.</p>
+              <p className="text-xs text-slate-400 italic p-4 text-center">
+                No users found.
+              </p>
             ) : (
-              filteredUsers.map(user => {
+              filteredUsers.map((user) => {
                 const isSelected = selectedUserIds.includes(user.id);
                 return (
                   <button
@@ -125,7 +138,7 @@ export const CreateGroupView = ({ onClose }: CreateGroupViewProps) => {
                     type="button"
                     onClick={() => toggleUser(user.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-slate-50 last:border-b-0 ${
-                      isSelected ? 'bg-primary-50' : 'hover:bg-slate-50'
+                      isSelected ? "bg-primary-50" : "hover:bg-slate-50"
                     }`}
                   >
                     <div className="shrink-0">
@@ -136,7 +149,9 @@ export const CreateGroupView = ({ onClose }: CreateGroupViewProps) => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{user.email}</p>
+                      <p className="text-sm font-medium text-slate-900 truncate">
+                        {user.email}
+                      </p>
                       <p className="text-[10px] text-slate-400">{user.role}</p>
                     </div>
                   </button>

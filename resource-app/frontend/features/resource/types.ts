@@ -34,6 +34,9 @@ export interface Resource {
 
   // Dynamic Booking Questions
   formFields: FormField[];
+
+  // Access control
+  canBook?: boolean;
 }
 
 export enum PermissionType {
