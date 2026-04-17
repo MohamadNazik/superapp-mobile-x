@@ -115,11 +115,9 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
 
   const availableUsers = useMemo(() => {
     const query = addUserSearch.toLowerCase();
-    return allUsers
-      .filter(u => !memberIds.has(u.id))
-      .filter(u =>
-        u.email.toLowerCase().includes(query)
-      );
+    return allUsers.filter(
+      (u) => !memberIds.has(u.id) && u.role !== 'ADMIN' && u.email.toLowerCase().includes(query)
+    );
   }, [allUsers, memberIds, addUserSearch]);
 
   return (
