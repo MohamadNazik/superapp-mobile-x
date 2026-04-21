@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Permission Domain API
-  description: API endpoints for managing resource permissions and group access control in the resource-app. All endpoints in this domain require Admin privileges.
+  description: API endpoints for managing resource permissions and group access control in the resource-app. Permission write endpoints require Admin privileges, while GET /resources/{id}/permissions is available to all authenticated users.
   version: 1.0.0
 
 servers:
@@ -217,7 +217,7 @@ paths:
   /resources/{id}/permissions:
     get:
       summary: Get resource permissions
-      description: Get all group permissions for a specific resource
+      description: Get group permissions for a specific resource. Supports optional filtering by permission type.
       operationId: getResourcePermissions
       tags:
         - Permissions
@@ -231,6 +231,16 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: type
+          in: query
+          required: false
+          description: Optional permission type filter
+          schema:
+            type: string
+            enum:
+              - REQUEST
+              - APPROVE
+          example: REQUEST
       responses:
         "200":
           description: Successfully retrieved resource permissions
@@ -246,8 +256,25 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/ResourcePermissionResult"
+              example:
+                success: true
+                data:
+                  - id: "7f9a7c0c-b745-4f21-88c0-5f0c5ef0f301"
+                    groupId: "f6af39f1-1a87-4f30-bc58-83b8ef2a0a10"
+                    groupName: "Operations"
+                    permissionType: "REQUEST"
+                  - id: "9a4b67a7-9d4d-4b3f-9a75-6d4d19f9d7d8"
+                    groupId: "d4fd7d1b-4f9d-4bb5-8b22-1c6f4eb0f4cd"
+                    groupName: "Facilities"
+                    permissionType: "REQUEST"
         "404":
           description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Invalid resource ID or permission type
           content:
             application/json:
               schema:

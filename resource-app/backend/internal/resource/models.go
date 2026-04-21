@@ -19,3 +19,9 @@ type Resource struct {
 	CreatedAt        time.Time       `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt        time.Time       `json:"updatedAt" gorm:"autoUpdateTime"`
 }
+
+// ResourceListItem extends Resource with per-user requestability metadata.
+type ResourceListItem struct {
+	Resource
+	CanBook bool `json:"canBook" gorm:"column:can_book"`
+}

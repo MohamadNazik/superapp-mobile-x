@@ -2,6 +2,9 @@ package resource
 
 import (
 	"errors"
+
+	perm "resource-app/internal/permission"
+
 	"gorm.io/gorm"
 )
 
@@ -9,7 +12,7 @@ var ErrResourceNameDuplicate = errors.New("resource name already exists")
 var ErrResourceNotFound = errors.New("resource not found")
 
 type Repository interface {
-	GetResources() ([]Resource, error)
+	GetResources(currentUserID string) ([]ResourceListItem, error)
 	AddResource(resource *Resource) error
 	UpdateResource(resource *Resource) error
 	DeleteResource(id string) error
@@ -24,10 +27,21 @@ func NewGormRepository(db *gorm.DB) *GormRepository {
 	return &GormRepository{db: db}
 }
 
-func (r *GormRepository) GetResources() ([]Resource, error) {
-	var resources []Resource
-	result := r.db.Find(&resources)
-	return resources, result.Error
+func (r *GormRepository) GetResources(currentUserID string) ([]ResourceListItem, error) {
+	var resources []ResourceListItem
+
+	err := r.db.Model(&Resource{}).
+		Select("resources.*, CASE WHEN user_perms.resource_id IS NOT NULL THEN TRUE ELSE FALSE END AS can_book").
+		Joins(`LEFT JOIN (
+			SELECT DISTINCT rp.resource_id
+			FROM resource_permissions rp
+			JOIN user_groups ug ON ug.group_id = rp.group_id
+			WHERE rp.permission_type = ? AND ug.user_id = ?
+		) AS user_perms ON user_perms.resource_id = resources.id`, perm.PermissionTypeRequest, currentUserID).
+		Order("created_at DESC").
+		Scan(&resources).Error
+
+	return resources, err
 }
 
 func (r *GormRepository) AddResource(resource *Resource) error {

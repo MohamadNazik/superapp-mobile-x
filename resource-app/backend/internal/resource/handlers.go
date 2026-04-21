@@ -3,13 +3,20 @@ package resource
 import (
 	"errors"
 	"net/http"
+	"resource-app/internal/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 func HandleGetResources(svc *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		resources, err := svc.GetResources()
+		user := auth.GetUserFromContext(c)
+		if user == nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "User not authenticated"})
+			return
+		}
+
+		resources, err := svc.GetResources(user.ID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch resources"})
 			return
@@ -72,7 +79,12 @@ func HandleDeleteResource(svc *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		if err := svc.DeleteResource(id); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete resource"})
+			switch {
+			case errors.Is(err, ErrResourceNotFound):
+				c.JSON(http.StatusNotFound, gin.H{"success": false, "error": err.Error()})
+			default:
+				c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to delete resource"})
+			}
 			return
 		}
 		c.Status(http.StatusNoContent)

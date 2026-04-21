@@ -13,8 +13,9 @@ type Repository interface {
 	UpdatePermissionType(id string, permissionType PermissionType) (*ResourcePermission, error)
 	DeletePermission(id string) error
 	GetPermissionsByGroupID(ctx context.Context, groupID string) ([]GroupPermissionResult, error)
-	GetPermissionsByResourceID(ctx context.Context, resourceID string) ([]ResourcePermissionResult, error)
+	GetPermissionsByResourceID(ctx context.Context, resourceID string, permissionType *PermissionType) ([]ResourcePermissionResult, error)
 	HasUserPermissionForResource(userID, resourceID string, permissionType PermissionType) (bool, error)
+	GetResourceIDsByUserPermission(userID string, permissionType PermissionType) ([]string, error)
 }
 
 type GormRepository struct {
@@ -115,14 +116,19 @@ func (r *GormRepository) GetPermissionsByGroupID(ctx context.Context, groupID st
 	return permissions, nil
 }
 
-func (r *GormRepository) GetPermissionsByResourceID(ctx context.Context, resourceID string) ([]ResourcePermissionResult, error) {
+func (r *GormRepository) GetPermissionsByResourceID(ctx context.Context, resourceID string, permissionType *PermissionType) ([]ResourcePermissionResult, error) {
 	var permissions []ResourcePermissionResult
-	err := r.db.WithContext(ctx).
+	query := r.db.WithContext(ctx).
 		Table("resource_permissions AS rp").
 		Select("rp.id, rp.group_id, g.name AS group_name, rp.permission_type").
 		Joins("JOIN `groups` AS g ON g.id = rp.group_id").
-		Where("rp.resource_id = ?", resourceID).
-		Order("g.name ASC, rp.permission_type ASC").
+		Where("rp.resource_id = ?", resourceID)
+
+	if permissionType != nil {
+		query = query.Where("rp.permission_type = ?", *permissionType)
+	}
+
+	err := query.Order("g.name ASC, rp.permission_type ASC").
 		Scan(&permissions).Error
 	if err != nil {
 		return nil, err
@@ -161,6 +167,21 @@ func (r *GormRepository) HasUserPermissionForResource(userID, resourceID string,
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (r *GormRepository) GetResourceIDsByUserPermission(userID string, permissionType PermissionType) ([]string, error) {
+	var resourceIDs []string
+	err := r.db.
+		Table("resource_permissions rp").
+		Distinct("rp.resource_id").
+		Joins("JOIN user_groups ug ON rp.group_id = ug.group_id").
+		Where("ug.user_id = ? AND rp.permission_type = ?", userID, permissionType).
+		Pluck("rp.resource_id", &resourceIDs).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return resourceIDs, nil
 }
 
 func foreignKeyConstraintError(err error) (bool, string) {

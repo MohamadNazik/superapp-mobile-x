@@ -126,10 +126,10 @@ func main() {
 	adminGroup.PATCH("/resource-permissions/:id", permission.HandleUpdatePermissionType(permissionService))
 	adminGroup.DELETE("/resource-permissions/:id", permission.HandleDeletePermission(permissionService))
 	adminGroup.GET("/groups/:id/permissions", permission.HandleGetGroupPermissions(permissionService))
-	adminGroup.GET("/resources/:id/permissions", permission.HandleGetResourcePermissions(permissionService))
 
 	// Resources
 	apiGroup.GET("/resources", resource.HandleGetResources(resourceService))
+	apiGroup.GET("/resources/:id/permissions", permission.HandleGetResourcePermissions(permissionService))
 	adminGroup.POST("/resources", resource.HandleAddResource(resourceService))
 	adminGroup.PUT("/resources/:id", resource.HandleUpdateResource(resourceService))
 	adminGroup.DELETE("/resources/:id", resource.HandleDeleteResource(resourceService))

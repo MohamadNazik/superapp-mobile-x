@@ -14,8 +14,8 @@ func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) GetResources() ([]Resource, error) {
-	return s.repo.GetResources()
+func (s *Service) GetResources(currentUserID string) ([]ResourceListItem, error) {
+	return s.repo.GetResources(currentUserID)
 }
 
 func (s *Service) AddResource(resource *Resource) error {

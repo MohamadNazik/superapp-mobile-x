@@ -14,7 +14,7 @@ paths:
   /resources:
     get:
       summary: Get all resources
-      description: Retrieve a list of all available resources
+      description: Retrieve a list of all available resources with requestability metadata for the authenticated user
       operationId: getResources
       tags:
         - Resources
@@ -34,7 +34,38 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Resource"
+                      $ref: "#/components/schemas/ResourceListItem"
+              example:
+                success: true
+                data:
+                  - id: "b7c7f7f6-8e2f-4cd7-8f6a-8d5fae0f2a01"
+                    name: "Conference Room A"
+                    type: "room"
+                    description: "Large conference room with AV equipment"
+                    isActive: true
+                    minLeadTimeHours: 2
+                    icon: "conference-room"
+                    color: "#FF5733"
+                    specs:
+                      capacity: 20
+                      hasVideo: true
+                    formFields: {}
+                    createdAt: "2026-04-16T10:00:00Z"
+                    updatedAt: "2026-04-16T10:00:00Z"
+                    canBook: true
+                  - id: "a91d0e1e-1eb5-4f9c-8a5b-7ec0f2b8b111"
+                    name: "Projector"
+                    type: "equipment"
+                    description: "Portable projector"
+                    isActive: true
+                    minLeadTimeHours: 1
+                    icon: "projector"
+                    color: "#1F2937"
+                    specs: {}
+                    formFields: {}
+                    createdAt: "2026-04-16T10:00:00Z"
+                    updatedAt: "2026-04-16T10:00:00Z"
+                    canBook: false
         "500":
           description: Failed to fetch resources
           content:
@@ -209,6 +240,17 @@ components:
         - id
         - name
         - type
+
+    ResourceListItem:
+      allOf:
+        - $ref: "#/components/schemas/Resource"
+        - type: object
+          properties:
+            canBook:
+              type: boolean
+              description: Whether the authenticated user can request this resource
+          required:
+            - canBook
 
     CreateResourceRequest:
       type: object
