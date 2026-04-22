@@ -30,7 +30,7 @@ export interface Resource {
   color?: string;
 
   // Generic Specs
-  specs: Record<string, string>;
+  specs: Record<string, unknown>;
 
   // Dynamic Booking Questions
   formFields: FormField[];

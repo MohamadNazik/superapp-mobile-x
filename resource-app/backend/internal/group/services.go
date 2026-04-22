@@ -25,7 +25,7 @@ func (s *Service) GetGroupsForUser(userID string) ([]GetMyGroupsResult, error) {
 	return s.repo.GetGroupsForUser(userID)
 }
 
-func (s *Service) UpdateGroup(id string, updateGroup *UpdateGroupPayload) error {
+func (s *Service) UpdateGroup(id string, updateGroup *UpdateGroupPayload) (*Group, error) {
 	updateGroup.Name = utils.NormalizeName(updateGroup.Name)
 	return s.repo.UpdateGroup(id, updateGroup)
 }

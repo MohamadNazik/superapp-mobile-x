@@ -2,6 +2,7 @@ import React from "react";
 import { useUser, userApi } from "../../../../features/user";
 import { Card, Badge, PageLoader } from "../../../../components/UI";
 import { Users, Shield, AlertCircle } from "lucide-react";
+import { toTitleCase } from "../../../../utils/format";
 
 export const ManageGroupsTab = () => {
   const [groups, setGroups] = React.useState<Array<{ id: string; name: string }>>([]);
@@ -68,12 +69,12 @@ export const ManageGroupsTab = () => {
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600 border border-primary-100">
                   <span className="text-lg font-bold">
-                    {group.name.charAt(0)}
+                    {group.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900 group-hover:text-primary-600 transition-colors tracking-tight">
-                    {group.name}
+                    {toTitleCase(group.name)}
                   </h4>
                   <Badge variant="primary" className="text-[9px] mt-1">
                     MEMBER

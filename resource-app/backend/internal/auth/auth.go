@@ -149,7 +149,7 @@ func DevAuthMiddleware(userService UserService) gin.HandlerFunc {
 			newUser := &user.User{
 				ID:        generateUUID(),
 				Email:     emailStr,
-				Role:      user.RoleAdmin, // Admins for dev convenience
+				Role:      user.RoleUser, // Set to User to test non-admin views
 				CreatedAt: time.Now(),
 			}
 

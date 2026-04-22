@@ -18,7 +18,7 @@ func HandleGetResources(svc *Service) gin.HandlerFunc {
 
 		resources, err := svc.GetResources(user.ID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch resources"})
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to fetch resources"})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"success": true, "data": resources})
@@ -29,7 +29,7 @@ func HandleAddResource(svc *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req Resource
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 			return
 		}
 
@@ -38,7 +38,7 @@ func HandleAddResource(svc *Service) gin.HandlerFunc {
 			case errors.Is(err, ErrResourceNameDuplicate):
 				c.JSON(http.StatusConflict, gin.H{"success": false, "error": err.Error()})
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create resource"})
+				c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to create resource"})
 			}
 			return
 		}
@@ -52,7 +52,7 @@ func HandleUpdateResource(svc *Service) gin.HandlerFunc {
 		id := c.Param("id")
 		var req Resource
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 			return
 		}
 
@@ -62,11 +62,11 @@ func HandleUpdateResource(svc *Service) gin.HandlerFunc {
 		if err := svc.UpdateResource(&req); err != nil {
 			switch {
 			case errors.Is(err, ErrResourceNotFound):
-				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				c.JSON(http.StatusNotFound, gin.H{"success": false, "error": err.Error()})
 			case errors.Is(err, ErrResourceNameDuplicate):
 				c.JSON(http.StatusConflict, gin.H{"success": false, "error": err.Error()})
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update resource"})
+				c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to update resource"})
 			}
 			return
 		}

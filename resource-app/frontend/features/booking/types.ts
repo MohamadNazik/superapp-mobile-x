@@ -16,6 +16,7 @@ export interface Booking {
   end: string;   // ISO String
   status: BookingStatus;
   createdAt: string;
+  updatedAt: string;
   rejectionReason?: string;
 
   // Dynamic Answers

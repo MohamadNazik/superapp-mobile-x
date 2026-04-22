@@ -21,7 +21,7 @@ export const CreateGroupView = ({ onClose }: CreateGroupViewProps) => {
   const filteredUsers = useMemo(() => {
     const query = searchQuery.toLowerCase();
     return allUsers.filter(
-      (u) => u.role !== "ADMIN" && u.email.toLowerCase().includes(query)
+      (u) => u.role !== "ADMIN" && u.email.toLowerCase().includes(query),
     );
   }, [allUsers, searchQuery]);
 

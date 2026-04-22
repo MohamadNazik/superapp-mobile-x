@@ -4,6 +4,7 @@ import { Group } from '../../../group/types';
 import { Card, EmptyState } from '../../../../components/UI';
 import { Users, ChevronRight, Plus } from 'lucide-react';
 import { format } from 'date-fns';
+import { toTitleCase } from '../../../../utils/format';
 import { CreateGroupView } from './CreateGroupView';
 import { GroupDetailsView } from './GroupDetailsView';
 
@@ -54,7 +55,9 @@ export const GroupsTab = ({ onActiveFullScreen }: { onActiveFullScreen: (active:
               }}
             >
               <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-sm text-slate-900 truncate" title={g.name}>{g.name}</h4>
+                <h4 className="font-bold text-sm text-slate-900 truncate" title={g.name}>
+                  {toTitleCase(g.name)}
+                </h4>
                 {g.description && <p className="text-xs text-slate-500 mt-1 truncate" title={g.description}>{g.description}</p>}
                 {g.createdAt && (
                   <span className="text-[10px] text-slate-400 mt-2 block">

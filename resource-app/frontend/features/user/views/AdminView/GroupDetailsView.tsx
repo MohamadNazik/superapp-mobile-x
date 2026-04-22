@@ -1,9 +1,20 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeft, Edit2, Save, X, Trash2, UserPlus, Search, CheckSquare, Square } from 'lucide-react';
-import { Button, Input, Label, Card, Modal } from '../../../../components/UI';
-import { useGroup } from '../../../group/context';
-import { useUser } from '../../context';
-import { Group, GroupMember } from '../../../group/types';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  ArrowLeft,
+  Edit2,
+  Save,
+  X,
+  Trash2,
+  UserPlus,
+  Search,
+  CheckSquare,
+  Square,
+} from "lucide-react";
+import { Button, Input, Label, Card, Modal } from "../../../../components/UI";
+import { useGroup } from "../../../group/context";
+import { useUser } from "../../context";
+import { Group, GroupMember } from "../../../group/types";
+import { toTitleCase } from "../../../../utils/format";
 
 interface GroupDetailsViewProps {
   group: Group;
@@ -11,7 +22,14 @@ interface GroupDetailsViewProps {
 }
 
 export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
-  const { updateGroup, deleteGroup, getGroupMembers, addUsersToGroup, removeUserFromGroup, error: groupError } = useGroup();
+  const {
+    updateGroup,
+    deleteGroup,
+    getGroupMembers,
+    addUsersToGroup,
+    removeUserFromGroup,
+    error: groupError,
+  } = useGroup();
   const { allUsers } = useUser();
 
   // ─── Edit State ───
@@ -27,7 +45,7 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
 
   // ─── Assign Users Modal ───
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
-  const [addUserSearch, setAddUserSearch] = useState('');
+  const [addUserSearch, setAddUserSearch] = useState("");
   const [selectedNewUserIds, setSelectedNewUserIds] = useState<string[]>([]);
   const [isAddingUsers, setIsAddingUsers] = useState(false);
 
@@ -52,7 +70,10 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
     if (!editName.trim() || isUpdating) return;
     setIsUpdating(true);
     try {
-      const success = await updateGroup(group.id, { name: editName, description: editDescription });
+      const success = await updateGroup(group.id, {
+        name: editName,
+        description: editDescription,
+      });
       if (success) setIsEditing(false);
     } finally {
       setIsUpdating(false);
@@ -70,7 +91,7 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
     try {
       const result = await removeUserFromGroup(group.id, userId);
       if (result) {
-        setMembers(prev => prev.filter(m => m.id !== userId));
+        setMembers((prev) => prev.filter((m) => m.id !== userId));
       }
     } finally {
       setRemovingUserId(null);
@@ -86,7 +107,7 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
         await fetchMembers();
         setIsAddUserModalOpen(false);
         setSelectedNewUserIds([]);
-        setAddUserSearch('');
+        setAddUserSearch("");
       }
     } finally {
       setIsAddingUsers(false);
@@ -105,18 +126,23 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
   };
 
   const toggleNewUser = (userId: string) => {
-    setSelectedNewUserIds(prev =>
-      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    setSelectedNewUserIds((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
     );
   };
 
   // Filter all users excluding those already members
-  const memberIds = useMemo(() => new Set(members.map(m => m.id)), [members]);
+  const memberIds = useMemo(() => new Set(members.map((m) => m.id)), [members]);
 
   const availableUsers = useMemo(() => {
     const query = addUserSearch.toLowerCase();
     return allUsers.filter(
-      (u) => !memberIds.has(u.id) && u.role !== 'ADMIN' && u.email.toLowerCase().includes(query)
+      (u) =>
+        !memberIds.has(u.id) &&
+        u.role !== "ADMIN" &&
+        u.email.toLowerCase().includes(query),
     );
   }, [allUsers, memberIds, addUserSearch]);
 
@@ -124,11 +150,16 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
     <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col animate-in fade-in duration-200">
       {/* Header */}
       <div className="bg-white px-4 py-3 border-b border-slate-200 flex items-center gap-3 shrink-0 shadow-sm">
-        <button onClick={onClose} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors">
+        <button
+          onClick={onClose}
+          className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors"
+        >
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1">
-          <h2 className="text-sm font-bold text-slate-900">{group.name}</h2>
+          <h2 className="text-sm font-bold text-slate-900">
+            {toTitleCase(group.name)}
+          </h2>
           <p className="text-xs text-slate-500">Group Details</p>
         </div>
         {!isEditing && (
@@ -148,7 +179,6 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
-
         {/* Error Banner */}
         {groupError && (
           <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
@@ -158,23 +188,42 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
 
         {/* Group Info Section */}
         <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase text-slate-400 px-1 tracking-wide border-b border-slate-200 pb-2">Group Information</h3>
+          <h3 className="text-xs font-bold uppercase text-slate-400 px-1 tracking-wide border-b border-slate-200 pb-2">
+            Group Information
+          </h3>
 
           {isEditing ? (
             <div className="space-y-4 animate-in fade-in">
               <div>
                 <Label required>Group Name</Label>
-                <Input value={editName} onChange={e => setEditName(e.target.value)} autoFocus />
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  autoFocus
+                />
               </div>
               <div>
                 <Label>Description</Label>
-                <Input value={editDescription} onChange={e => setEditDescription(e.target.value)} />
+                <Input
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                />
               </div>
               <div className="flex gap-2">
-                <Button className="flex-1" onClick={handleSaveEdit} isLoading={isUpdating} disabled={!editName.trim()}>
+                <Button
+                  className="flex-1"
+                  onClick={handleSaveEdit}
+                  isLoading={isUpdating}
+                  disabled={!editName.trim()}
+                >
                   <Save size={16} className="mr-2" /> Save
                 </Button>
-                <Button variant="outline" className="flex-1" onClick={handleCancelEdit} disabled={isUpdating}>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleCancelEdit}
+                  disabled={isUpdating}
+                >
                   <X size={16} className="mr-2" /> Cancel
                 </Button>
               </div>
@@ -182,12 +231,20 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
           ) : (
             <Card className="space-y-3">
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Name</span>
-                <p className="text-sm font-semibold text-slate-900">{group.name}</p>
+                <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                  Name
+                </span>
+                <p className="text-sm font-semibold text-slate-900">
+                  {toTitleCase(group.name)}
+                </p>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Description</span>
-                <p className="text-sm text-slate-700">{group.description || 'No description provided.'}</p>
+                <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                  Description
+                </span>
+                <p className="text-sm text-slate-700">
+                  {group.description || "No description provided."}
+                </p>
               </div>
             </Card>
           )}
@@ -202,16 +259,25 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
                 {members.length}
               </span>
             </h3>
-            <Button size="sm" variant="ghost" onClick={() => setIsAddUserModalOpen(true)} className="h-6 text-primary-600">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsAddUserModalOpen(true)}
+              className="h-6 text-primary-600"
+            >
               <UserPlus size={14} className="mr-1" /> Assign Users
             </Button>
           </div>
 
           {isMembersLoading ? (
-            <p className="text-xs text-slate-400 italic p-4 text-center">Loading members...</p>
+            <p className="text-xs text-slate-400 italic p-4 text-center">
+              Loading members...
+            </p>
           ) : members.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-sm text-slate-400">No users assigned to this group yet.</p>
+              <p className="text-sm text-slate-400">
+                No users assigned to this group yet.
+              </p>
               <Button
                 size="sm"
                 variant="outline"
@@ -223,13 +289,15 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
             </div>
           ) : (
             <div className="space-y-1 rounded-lg border border-slate-200 bg-white overflow-hidden">
-              {members.map(member => (
+              {members.map((member) => (
                 <div
                   key={member.id}
                   className="flex items-center justify-between px-4 py-3 border-b border-slate-50 last:border-b-0"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-900 truncate">{member.email}</p>
+                    <p className="text-sm font-medium text-slate-900 truncate">
+                      {member.email}
+                    </p>
                     <p className="text-[10px] text-slate-400">{member.name}</p>
                   </div>
                   <button
@@ -248,7 +316,9 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
 
         {/* Danger Zone */}
         <section className="space-y-4 pt-4">
-          <h3 className="text-xs font-bold uppercase text-red-400 px-1 tracking-wide border-b border-red-100 pb-2">Danger Zone</h3>
+          <h3 className="text-xs font-bold uppercase text-red-400 px-1 tracking-wide border-b border-red-100 pb-2">
+            Danger Zone
+          </h3>
           <Button
             variant="danger"
             className="w-full"
@@ -265,17 +335,20 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
         onClose={() => {
           setIsAddUserModalOpen(false);
           setSelectedNewUserIds([]);
-          setAddUserSearch('');
+          setAddUserSearch("");
         }}
         title="Assign Users to Group"
       >
         <div className="space-y-4">
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
             <Input
               placeholder="Search users..."
               value={addUserSearch}
-              onChange={e => setAddUserSearch(e.target.value)}
+              onChange={(e) => setAddUserSearch(e.target.value)}
               className="pl-9"
               autoFocus
             />
@@ -283,9 +356,11 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
 
           <div className="space-y-1 max-h-[40vh] overflow-y-auto rounded-lg border border-slate-200">
             {availableUsers.length === 0 ? (
-              <p className="text-xs text-slate-400 italic p-4 text-center">No available users to add.</p>
+              <p className="text-xs text-slate-400 italic p-4 text-center">
+                No available users to add.
+              </p>
             ) : (
-              availableUsers.map(user => {
+              availableUsers.map((user) => {
                 const isSelected = selectedNewUserIds.includes(user.id);
                 return (
                   <button
@@ -293,16 +368,21 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
                     type="button"
                     onClick={() => toggleNewUser(user.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-slate-50 last:border-b-0 ${
-                      isSelected ? 'bg-primary-50' : 'hover:bg-slate-50'
+                      isSelected ? "bg-primary-50" : "hover:bg-slate-50"
                     }`}
                   >
                     {isSelected ? (
-                      <CheckSquare size={18} className="text-primary-600 shrink-0" />
+                      <CheckSquare
+                        size={18}
+                        className="text-primary-600 shrink-0"
+                      />
                     ) : (
                       <Square size={18} className="text-slate-300 shrink-0" />
                     )}
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{user.email}</p>
+                      <p className="text-sm font-medium text-slate-900 truncate">
+                        {user.email}
+                      </p>
                     </div>
                   </button>
                 );
@@ -316,7 +396,8 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
             isLoading={isAddingUsers}
             disabled={selectedNewUserIds.length === 0}
           >
-            Assign {selectedNewUserIds.length} User{selectedNewUserIds.length !== 1 ? 's' : ''}
+            Assign {selectedNewUserIds.length} User
+            {selectedNewUserIds.length !== 1 ? "s" : ""}
           </Button>
         </div>
       </Modal>
@@ -329,13 +410,25 @@ export const GroupDetailsView = ({ group, onClose }: GroupDetailsViewProps) => {
       >
         <div className="space-y-4">
           <p className="text-sm text-slate-600">
-            Are you sure you want to delete <strong>{group.name}</strong>? This will remove all user assignments and cannot be undone.
+            Are you sure you want to delete{" "}
+            <strong>{toTitleCase(group.name)}</strong>? This will remove all
+            user assignments and cannot be undone.
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={() => setIsDeleteConfirmOpen(false)} disabled={isDeleting}>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setIsDeleteConfirmOpen(false)}
+              disabled={isDeleting}
+            >
               Cancel
             </Button>
-            <Button variant="danger" className="flex-1" onClick={handleDelete} isLoading={isDeleting}>
+            <Button
+              variant="danger"
+              className="flex-1"
+              onClick={handleDelete}
+              isLoading={isDeleting}
+            >
               Delete
             </Button>
           </div>

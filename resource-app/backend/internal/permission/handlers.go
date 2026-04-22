@@ -12,17 +12,17 @@ func HandleCreatePermission(svc *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req CreatePermissionRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 			return
 		}
 
 		if _, err := uuid.Parse(req.ResourceID); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid resource ID"})
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid resource ID"})
 			return
 		}
 
 		if _, err := uuid.Parse(req.GroupID); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid group ID"})
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid group ID"})
 			return
 		}
 
@@ -35,13 +35,13 @@ func HandleCreatePermission(svc *Service) gin.HandlerFunc {
 		if err := svc.CreatePermission(&permission); err != nil {
 			switch {
 			case errors.Is(err, ErrInvalidPermissionType):
-				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 			case errors.Is(err, ErrResourceNotFound), errors.Is(err, ErrGroupNotFound):
-				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				c.JSON(http.StatusNotFound, gin.H{"success": false, "error": err.Error()})
 			case errors.Is(err, ErrPermissionConflict):
-				c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+				c.JSON(http.StatusConflict, gin.H{"success": false, "error": err.Error()})
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create permission"})
+				c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to create permission"})
 			}
 			return
 		}
@@ -54,13 +54,13 @@ func HandleUpdatePermissionType(svc *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		if _, err := uuid.Parse(id); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid permission ID"})
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid permission ID"})
 			return
 		}
 
 		var req UpdatePermissionTypeRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 			return
 		}
 
@@ -68,13 +68,13 @@ func HandleUpdatePermissionType(svc *Service) gin.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, ErrInvalidPermissionType):
-				c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidPermissionType.Error()})
+				c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": ErrInvalidPermissionType.Error()})
 			case errors.Is(err, ErrPermissionNotFound):
-				c.JSON(http.StatusNotFound, gin.H{"error": ErrPermissionNotFound.Error()})
+				c.JSON(http.StatusNotFound, gin.H{"success": false, "error": ErrPermissionNotFound.Error()})
 			case errors.Is(err, ErrPermissionConflict):
-				c.JSON(http.StatusConflict, gin.H{"error": ErrPermissionConflict.Error()})
+				c.JSON(http.StatusConflict, gin.H{"success": false, "error": ErrPermissionConflict.Error()})
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update permission"})
+				c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to update permission"})
 			}
 			return
 		}
@@ -87,16 +87,16 @@ func HandleDeletePermission(svc *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		if _, err := uuid.Parse(id); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid permission ID"})
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid permission ID"})
 			return
 		}
 
 		if err := svc.DeletePermission(id); err != nil {
 			switch {
 			case errors.Is(err, ErrPermissionNotFound):
-				c.JSON(http.StatusNotFound, gin.H{"error": ErrPermissionNotFound.Error()})
+				c.JSON(http.StatusNotFound, gin.H{"success": false, "error": ErrPermissionNotFound.Error()})
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete permission"})
+				c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to delete permission"})
 			}
 			return
 		}
@@ -112,9 +112,9 @@ func HandleGetGroupPermissions(svc *Service) gin.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, ErrGroupNotFound):
-				c.JSON(http.StatusNotFound, gin.H{"error": ErrGroupNotFound.Error()})
+				c.JSON(http.StatusNotFound, gin.H{"success": false, "error": ErrGroupNotFound.Error()})
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch group permissions"})
+				c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to fetch group permissions"})
 			}
 			return
 		}
@@ -141,9 +141,9 @@ func HandleGetResourcePermissions(svc *Service) gin.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, ErrResourceNotFound):
-				c.JSON(http.StatusNotFound, gin.H{"error": ErrResourceNotFound.Error()})
+				c.JSON(http.StatusNotFound, gin.H{"success": false, "error": ErrResourceNotFound.Error()})
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch resource permissions"})
+				c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to fetch resource permissions"})
 			}
 			return
 		}

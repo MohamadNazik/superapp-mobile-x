@@ -17,7 +17,7 @@ type Repository interface {
 	CreateGroup(createGroup *CreateGroupPayload) (*CreateGroupResult, error)
 	GetGroups() ([]Group, error)
 	GetGroupsForUser(userID string) ([]GetMyGroupsResult, error)
-	UpdateGroup(id string, updateGroup *UpdateGroupPayload) error
+	UpdateGroup(id string, updateGroup *UpdateGroupPayload) (*Group, error)
 	DeleteGroup(id string) error
 	AddUsersToGroup(groupID string, userIDs []string) (*AddUsersToGroupResult, error)
 	RemoveUserFromGroup(groupID, userID string) (*RemoveUserFromGroupResult, error)
@@ -97,12 +97,11 @@ func (r *GormRepository) GetGroups() ([]Group, error) {
 
 func (r *GormRepository) GetGroupsForUser(userID string) ([]GetMyGroupsResult, error) {
 	groups := make([]GetMyGroupsResult, 0)
-	err := r.db.Table("groups AS g").
-		Select("g.id, g.name").
-		Joins("JOIN user_groups ug ON ug.group_id = g.id").
+	err := r.db.Model(&Group{}).
+		Select("`groups`.id, `groups`.name").
+		Joins("JOIN user_groups ug ON ug.group_id = `groups`.id").
 		Where("ug.user_id = ?", userID).
-		Order("g.name ASC").
-		Order("g.id ASC").
+		Order("`groups`.name ASC, `groups`.id ASC").
 		Scan(&groups).Error
 	if err != nil {
 		return nil, err
@@ -111,7 +110,7 @@ func (r *GormRepository) GetGroupsForUser(userID string) ([]GetMyGroupsResult, e
 	return groups, nil
 }
 
-func (r *GormRepository) UpdateGroup(id string, updateGroup *UpdateGroupPayload) error {
+func (r *GormRepository) UpdateGroup(id string, updateGroup *UpdateGroupPayload) (*Group, error) {
 	updates := Group{
 		Name:        updateGroup.Name,
 		Description: updateGroup.Description,
@@ -124,16 +123,22 @@ func (r *GormRepository) UpdateGroup(id string, updateGroup *UpdateGroupPayload)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
-			return ErrGroupNameDuplicate
+			return nil, ErrGroupNameDuplicate
 		}
-		return result.Error
+		return nil, result.Error
 	}
 
 	if result.RowsAffected == 0 {
-		return ErrGroupNotFound
+		return nil, ErrGroupNotFound
 	}
 
-	return nil
+	// Fetch and return the full updated object
+	var updatedGroup Group
+	if err := r.db.First(&updatedGroup, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+
+	return &updatedGroup, nil
 }
 
 func (r *GormRepository) DeleteGroup(id string) error {
