@@ -12,7 +12,7 @@ import { endOfMonth, eachDayOfInterval, isSameDay, getDay, format } from 'date-f
 export const useCalendar = () => {
   const { bookings } = useBookingContext();
   const { resources } = useResource();
-  const { currentUser, allUsers } = useUser();
+  const { currentUser, allUsers, isAdmin } = useUser();
   const { holidays } = useHoliday();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -38,7 +38,7 @@ export const useCalendar = () => {
   const startDayIndex = getDay(monthStart);
   const paddingDays = Array(startDayIndex).fill(null);
 
-  const isAdmin = currentUser?.role === UserRole.ADMIN;
+
 
   // Filter Bookings
   const displayBookings = useMemo(() => {

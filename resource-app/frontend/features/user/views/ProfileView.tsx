@@ -6,7 +6,7 @@ import { UserRole } from '../types';
 import { Code, LogOut } from 'lucide-react';
 
 export const ProfileView = () => {
-  const { currentUser, allUsers, switchUser } = useUser();
+  const { currentUser, allUsers, switchUser, isAdmin } = useUser();
 
   return (
     <div className="space-y-6 animate-in fade-in pb-6">
@@ -18,7 +18,7 @@ export const ProfileView = () => {
          <div className="min-w-0">
             <h2 className="text-lg font-bold text-slate-900 truncate">{currentUser?.email}</h2>
             <p className="text-sm text-slate-500 mb-1.5">{currentUser?.department || 'General Member'}</p>
-            <Badge variant={currentUser?.role === UserRole.ADMIN ? 'primary' : 'neutral'}>
+            <Badge variant={isAdmin ? 'primary' : 'neutral'}>
                {currentUser?.role}
             </Badge>
          </div>

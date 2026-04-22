@@ -15,6 +15,9 @@ const handle = async <T>(request: Promise<{ data: { data: T } }>): Promise<ApiRe
 export const bookingApi = {
   getBookings: () => handle<Booking[]>(httpClient.get('/bookings')),
 
+  getApprovableBookings: () => 
+    handle<Booking[]>(httpClient.get('/bookings', { params: { scope: 'approvable' } })),
+
   createBooking: (data: unknown) =>
     handle<Booking>(httpClient.post('/bookings', data)),
 

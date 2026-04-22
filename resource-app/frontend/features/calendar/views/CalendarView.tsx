@@ -23,8 +23,7 @@ export const CalendarView = () => {
   } = useCalendar();
 
   const { bookings, processBooking, dismissBooking } = useBookingContext();
-  const { currentUser } = useUser();
-  const isAdmin = currentUser?.role === UserRole.ADMIN;
+  const { currentUser, isAdmin } = useUser();
 
   // Filter Actionable Items (Proposed or Rejected for current user)
   const actionableBookings = React.useMemo(() => bookings.filter(b =>
