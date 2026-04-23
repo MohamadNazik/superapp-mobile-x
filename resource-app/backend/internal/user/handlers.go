@@ -43,11 +43,24 @@ func HandleUpdateUserRole(service *Service) gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"success": true, "data": updatedUser})
 	}
 }
+
+func HandleGetMe() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		currentUser := GetUserFromContext(c)
+		if currentUser == nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": currentUser})
+	}
+}
+
 // RegisterRoutes registers the user routes
 func RegisterRoutes(rg *gin.RouterGroup, service *Service) {
 	users := rg.Group("/users")
 	{
 		users.GET("", HandleGetUsers(service))
+		users.GET("/me", HandleGetMe())
 		users.PATCH("/:id/role", HandleUpdateUserRole(service))
 	}
 }
