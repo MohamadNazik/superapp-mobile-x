@@ -178,12 +178,7 @@ func DevAuthMiddleware(userService UserService) gin.HandlerFunc {
 
 // GetUserFromContext retrieves the user object from the Gin context
 func GetUserFromContext(c *gin.Context) *user.User {
-	if u, exists := c.Get("user"); exists {
-		if uObj, ok := u.(*user.User); ok {
-			return uObj
-		}
-	}
-	return nil
+	return user.GetUserFromContext(c)
 }
 
 // RequireAdminMiddleware restricts access to users with ADMIN role.
