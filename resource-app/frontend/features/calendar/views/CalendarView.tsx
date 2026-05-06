@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { format, isToday, isSameDay } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { cn } from '../../../utils/cn';
@@ -23,7 +23,13 @@ export const CalendarView = () => {
   } = useCalendar();
 
   const { bookings, processBooking, dismissBooking } = useBookingContext();
-  const { currentUser, isAdmin } = useUser();
+  const { currentUser, isAdmin, allUsers, fetchAllUsers } = useUser();
+
+  useEffect(() => {
+    if (isAdmin && allUsers.length === 0) {
+      fetchAllUsers();
+    }
+  }, [isAdmin, allUsers.length, fetchAllUsers]);
 
   // Filter Actionable Items (Proposed or Rejected for current user)
   const actionableBookings = React.useMemo(() => bookings.filter(b =>

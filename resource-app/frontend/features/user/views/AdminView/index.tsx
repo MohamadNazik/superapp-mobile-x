@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useResource } from '../../../resource/context';
 import { useBookingContext } from '../../../../features/booking/context';
 import { cn } from '../../../../utils/cn';
 import { PageLoader } from '../../../../components/UI';
 import { BookingStatus } from '../../../../features/booking/types';
 import { GroupProvider } from '../../../group/context';
+import { useUser } from '../../context';
 
 import { ApprovalsTab } from './ApprovalsTab';
 import { ResourcesTab } from './ResourcesTab';
@@ -19,6 +20,13 @@ export const AdminView = () => {
   const { bookings } = useBookingContext();
   const [tab, setTab] = useState<AdminTab>('approvals');
   const [isFullScreenActive, setIsFullScreenActive] = useState(false);
+  const { allUsers, fetchAllUsers } = useUser();
+
+  useEffect(() => {
+    if (allUsers.length === 0) {
+      fetchAllUsers();
+    }
+  }, [allUsers.length, fetchAllUsers]);
 
   if (isLoading) return <PageLoader />;
 
