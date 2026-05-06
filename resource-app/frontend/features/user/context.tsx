@@ -7,10 +7,11 @@ interface UserContextType {
   currentUser: User | null;
   allUsers: User[];
   isLoading: boolean;
+  isUsersLoading: boolean;
   error: string | null;
-  refreshUsers: () => Promise<void>;
+  fetchUsers: () => Promise<void>;
   fetchAllUsers: () => Promise<void>;
-  updateUserRole: (userId: string, role: UserRole) => Promise<void>;
+  updateUserRole: (userId: string, role: UserRole) => Promise<boolean>;
   switchUser: (userId: string) => void;
   isAdmin: boolean;
 }
@@ -21,13 +22,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUsersLoading, setIsUsersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch only the current user from the new /me endpoint
       const response = await userApi.getMe();
 
       if (response.success && response.data) {
@@ -44,7 +45,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const fetchAllUsers = useCallback(async () => {
-    setIsLoading(true);
+    setIsUsersLoading(true);
     setError(null);
     try {
       const response = await userApi.getUsers();
@@ -57,7 +58,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error("UserProvider fetchAllUsers error:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch user list");
     } finally {
-      setIsLoading(false);
+      setIsUsersLoading(false);
     }
   }, []);
 
@@ -69,15 +70,22 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const res = await userApi.updateUserRole(userId, role);
       if (res.success) {
-        await fetchUsers();
+        await fetchAllUsers();
+        if (currentUser?.id === userId) {
+          await fetchUsers();
+        }
+        return true;
       } else {
         setError(res.error || "Failed to update user role");
+        return false;
       }
     } catch (err: unknown) {
       console.error("updateUserRole error:", err);
       setError(err instanceof Error ? err.message : "An unexpected error occurred while updating user role");
+      return false;
     }
-  }, [fetchUsers]);
+  }, [currentUser?.id, fetchAllUsers, fetchUsers]);
+
 
   const switchUser = useCallback((userId: string) => {
     const user = allUsers.find(u => u.id === userId);
@@ -93,8 +101,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       currentUser,
       allUsers,
       isLoading,
+      isUsersLoading,
       error,
-      refreshUsers: fetchUsers,
+      fetchUsers,
       fetchAllUsers,
       updateUserRole,
       switchUser,

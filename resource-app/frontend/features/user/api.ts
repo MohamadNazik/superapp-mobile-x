@@ -14,9 +14,7 @@ export const userApi = {
     } catch (error: any) {
       return { success: false, error: error.message || 'Failed to fetch users' };
     }
-  },
-
-  updateUserRole: async (userId: string, role: UserRole): Promise<ApiResponse<void>> => {
+  },  updateUserRole: async (userId: string, role: UserRole): Promise<ApiResponse<void>> => {
     try {
       await httpClient.patch(`/users/${userId}/role`, { role });
       return { success: true };
@@ -24,6 +22,7 @@ export const userApi = {
       return { success: false, error: error.message || 'Failed to update user role' };
     }
   },
+
 
   getMyGroups: async (): Promise<ApiResponse<Array<{ id: string; name: string }>>> => {
     try {

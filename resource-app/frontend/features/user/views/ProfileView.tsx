@@ -9,10 +9,10 @@ export const ProfileView = () => {
   const { currentUser, allUsers, switchUser, isAdmin, fetchAllUsers } = useUser();
 
   useEffect(() => {
-    if (allUsers.length === 0) {
+    if (isAdmin && allUsers.length === 0) {
       fetchAllUsers();
     }
-  }, [allUsers.length, fetchAllUsers]);
+  }, [isAdmin, allUsers.length, fetchAllUsers]);
 
   return (
     <div className="space-y-6 animate-in fade-in pb-6">

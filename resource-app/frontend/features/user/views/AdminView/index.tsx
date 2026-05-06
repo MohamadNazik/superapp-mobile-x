@@ -20,13 +20,13 @@ export const AdminView = () => {
   const { bookings } = useBookingContext();
   const [tab, setTab] = useState<AdminTab>('approvals');
   const [isFullScreenActive, setIsFullScreenActive] = useState(false);
-  const { allUsers, fetchAllUsers } = useUser();
+  const { isAdmin, allUsers, fetchAllUsers } = useUser();
 
   useEffect(() => {
-    if (allUsers.length === 0) {
+    if (isAdmin && allUsers.length === 0) {
       fetchAllUsers();
     }
-  }, [allUsers.length, fetchAllUsers]);
+  }, [isAdmin, allUsers.length, fetchAllUsers]);
 
   if (isLoading) return <PageLoader />;
 
